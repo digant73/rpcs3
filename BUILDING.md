@@ -13,8 +13,8 @@ The following tools are required to build RPCS3 on Windows 10 or later:
 
   **NOTES:**
   - **Visual Studio 2022** integrates **CMake 3.29+** and it also supports both the `sln` solution (`.sln`, `.vcxproj`) and `CMake` solution (`CMakeLists.txt`, `CMakePresets.json`).
-     See sections [Building from Visual Studio sln solution](#building-from-visual-studio-sln-solution) and [Building from Visual Studio CMake solution](#building-from-visual-studio-cmake-solution)
-     on how to build the project on **Visual Studio**.
+     See sections [Building with Visual Studio sln solution](#building-with-visual-studio-sln-solution) and [Building with Visual Studio CMake solution](#building-with-visual-studio-cmake-solution)
+     on how to build the project with **Visual Studio**.
   - Install and use this standalone **CMake** tool just in case of your preference.
 
 - [Python 3.6+](https://www.python.org/downloads/) (add to PATH)
@@ -27,7 +27,7 @@ In order to build **RPCS3** with **Qt** libs:
 
   **NOTE:** If you have issues with the **Visual Studio Qt Plugin**, you may want to uninstall it and install the [Legacy Qt Plugin](https://marketplace.visualstudio.com/items?itemName=TheQtCompany.LEGACYQtVisualStudioTools2019) instead.
 
-In order to build **RPCS3** with **CMake** (with both **Visual Studio** or standalone **CMake** tool):
+In order to build **RPCS3** with **CMake** (with both **Visual Studio** and standalone **CMake** tool):
 - add and set the `CMAKE_PREFIX_PATH` environment variable to the **Qt** libs path, e.g. `<QtInstallFolder>\6.7.3\msvc2019_64\`
 
 ### Linux
@@ -109,7 +109,7 @@ git submodule update --init
 
 ### Windows
 
-#### Building from Visual Studio sln solution
+#### Building with Visual Studio sln solution
 
 Start **Visual Studio**, click on `Open a project or solution` and select the `rpcs3.sln` file inside the RPCS3's root folder
 
@@ -137,7 +137,7 @@ Afterwards:
 
 `Build > Build Solution`
 
-#### Building from Visual Studio CMake solution
+#### Building with Visual Studio CMake solution
 
 Start **Visual Studio**, click on `Open a local folder` and select the RPCS3's root folder
 
@@ -149,7 +149,7 @@ Once the project is open on VS, from the `Solution Explorer` panel:
 5) right-click on `rpcs3 Project` and then click on `Build All`
 6) once the build is completed, the **RPCS3** application is available under the `<rpcs3_root>\build-msvc\bin` folder
 
-#### Building from standalone CMake tool
+#### Building with standalone CMake tool
 
 In case you preferred to install and use the standalone **CMake** tool:
 1) move on the RPCS3's root folder
