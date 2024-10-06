@@ -39,7 +39,8 @@
       }
     },
     {
-      "name": "msvc",
+      "hidden": true,
+      "name": "msvc_base",
       "displayName": "Windows x64",
       "generator": "Visual Studio 17 2022",
       "binaryDir": "build-msvc",
@@ -54,7 +55,9 @@
         "USE_SYSTEM_ZLIB": "OFF",
         "USE_NATIVE_INSTRUCTIONS": "ON",
         "BUILD_LLVM": "ON",
-        "STATIC_LINK_LLVM": "ON"
+        "STATIC_LINK_LLVM": "ON",
+        "USE_SYSTEM_OPENAL": "OFF",
+        "USE_SYSTEM_CURL": "OFF"
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
@@ -62,6 +65,20 @@
             "Windows"
           ]
         }
+      }
+    },
+    {
+      "name": "msvc-release",
+      "inherits": "msvc_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "msvc-debug",
+      "inherits": "msvc_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     }
   ]
