@@ -14,7 +14,7 @@ The following tools are required to build RPCS3 on Windows 10 or later:
   **NOTES:**
   - **Visual Studio 2022** integrates **CMake 3.29+** and it also supports both the `sln` solution (`.sln`, `.vcxproj`) and `CMake` solution (`CMakeLists.txt`, `CMakePresets.json`).
      See sections [Building from Visual Studio sln solution](#building-from-visual-studio-sln-solution) and [Building from Visual Studio CMake solution](#building-from-visual-studio-cmake-solution)
-     on how to build the project on Visual Studio.
+     on how to build the project on **Visual Studio**.
   - Install and use this standalone **CMake** tool just in case of your preference.
 
 - [Python 3.6+](https://www.python.org/downloads/) (add to PATH)
@@ -25,9 +25,9 @@ In order to build **RPCS3** with **Qt** libs:
 - add and set the `QTDIR` environment variable, e.g. `<QtInstallFolder>\6.7.3\msvc2019_64\`
 - or use the [Visual Studio Qt Plugin](https://marketplace.visualstudio.com/items?itemName=TheQtCompany.QtVisualStudioTools2019)
 
-  **NOTE:** If you have issues with the Visual Studio Qt plugin, you may want to uninstall it and install the [Legacy Qt Plugin](https://marketplace.visualstudio.com/items?itemName=TheQtCompany.LEGACYQtVisualStudioTools2019) instead.
+  **NOTE:** If you have issues with the **Visual Studio Qt Plugin**, you may want to uninstall it and install the [Legacy Qt Plugin](https://marketplace.visualstudio.com/items?itemName=TheQtCompany.LEGACYQtVisualStudioTools2019) instead.
 
-In order to build **RPCS3** with **CMake** (with both Visual Studio or standalone CMake tool):
+In order to build **RPCS3** with **CMake** (with both **Visual Studio** or standalone **CMake** tool):
 - add and set the `CMAKE_PREFIX_PATH` environment variable to the **Qt** libs path, e.g. `<QtInstallFolder>\6.7.3\msvc2019_64\`
 
 ### Linux
@@ -111,14 +111,14 @@ git submodule update --init
 
 #### Building from Visual Studio sln solution
 
-Start Visual Studio, click on `Open a project or solution` and select the `rpcs3.sln` file inside the RPCS3's root folder
+Start **Visual Studio**, click on `Open a project or solution` and select the `rpcs3.sln` file inside the RPCS3's root folder
 
-##### Configuring the Qt plugin (if used)
+##### Configuring the Qt Plugin (if used)
 
 1) go to `Extensions->Qt VS Tools->Qt Versions`
 2) add the path to your Qt installation with compiler e.g. `<QtInstallFolder>\6.7.3\msvc2019_64`, version will fill in automatically
-3) go to `Extensions->Qt VS Tools->Options->Legacy Project Format`. (Only available in the legacy Qt plugin)
-4) set `Build: Run pre-build setup` to `true`. (Only available in the legacy Qt plugin)
+3) go to `Extensions->Qt VS Tools->Options->Legacy Project Format`. (Only available in the **Legacy Qt Plugin**)
+4) set `Build: Run pre-build setup` to `true`. (Only available in the **Legacy Qt Plugin**)
 
 ##### Building the projects
 
@@ -139,7 +139,7 @@ Afterwards:
 
 #### Building from Visual Studio CMake solution
 
-Start Visual Studio, click on `Open a local folder` and select the RPCS3's root folder
+Start **Visual Studio**, click on `Open a local folder` and select the RPCS3's root folder
 
 Once the project is open on VS, from the `Solution Explorer` panel:
 1) right-click on `rpcs3` and then click on `Switch to CMake Targets View`
