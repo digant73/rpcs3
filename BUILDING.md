@@ -7,25 +7,36 @@ Other instructions may be found [here](https://wiki.rpcs3.net/index.php?title=Bu
 
 ### Windows 10 or later
 
-* [CMake 3.28.0+](https://www.cmake.org/download/) (add to PATH)
-* [Python 3.6+](https://www.python.org/downloads/) (add to PATH)
-* [Qt 6.7.3](https://www.qt.io/download-qt-installer)
-* [Visual Studio 2022](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community) (or at least Visual Studio 2019 16.11.xx+ as C++20 is not included in previous versions)
-* [Vulkan SDK 1.3.268.0](https://vulkan.lunarg.com/sdk/home) (See "Install the SDK" [here](https://vulkan.lunarg.com/doc/sdk/latest/windows/getting_started.html)) for now future SDKs don't work. You need precisely 1.3.268.0.
+- [Visual Studio 2022](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community) (or at least Visual Studio 2019 16.11.xx+ as C++20 is not included in previous versions)
+- **Optional** - [CMake 3.28.0+](https://www.cmake.org/download/) (add to PATH)
 
-**Either add the** `QTDIR` **environment variable, e.g.** `<QtInstallFolder>\6.7.3\msvc2019_64\` **, or use the [Visual Studio Qt Plugin](https://marketplace.visualstudio.com/items?itemName=TheQtCompany.QtVisualStudioTools2019)**
+  **NOTES:**
+  - **Visual Studio 2022** integrates **CMake 3.29+** and it also supports both the **sln** solution (`.sln`, `.vcxproj`) and **CMake** solution (`CMakeLists.txt`, `CMakePresets.json`).
+     See section [Building the projects](#building-the-projects) on how to build the project on VS 2022
+  - Install and use the standalone **CMake** tool just in case of your preference
 
-**NOTE: If you have issues with the Qt plugin, you may want to uninstall the Qt Plugin and install the [Legacy Qt Plugin](https://marketplace.visualstudio.com/items?itemName=TheQtCompany.LEGACYQtVisualStudioTools2019) instead.**
+- [Python 3.6+](https://www.python.org/downloads/) (add to PATH)
+- [Qt 6.7.3](https://www.qt.io/download-qt-installer)
+- [Vulkan SDK 1.3.268.0](https://vulkan.lunarg.com/sdk/home) (see "Install the SDK" [here](https://vulkan.lunarg.com/doc/sdk/latest/windows/getting_started.html)) for now future SDKs don't work. You need precisely 1.3.268.0.
+
+In order to build **RPCS3** with **Qt** libs:
+- add and set the `QTDIR` environment variable, e.g. `<QtInstallFolder>\6.7.3\msvc2019_64\`
+- or use the [Visual Studio Qt Plugin](https://marketplace.visualstudio.com/items?itemName=TheQtCompany.QtVisualStudioTools2019)
+
+**NOTE:** If you have issues with the Qt plugin, you may want to uninstall the Qt Plugin and install the [Legacy Qt Plugin](https://marketplace.visualstudio.com/items?itemName=TheQtCompany.LEGACYQtVisualStudioTools2019) instead.
+
+In order to build **RPCS3** with **CMake** (with both VS 2022 or standalone CMake):
+- add and set the `CMAKE_PREFIX_PATH` environment variable to the **Qt** libs path, e.g. `<QtInstallFolder>\6.7.3\msvc2019_64\`
 
 ### Linux
 
 These are the essentials tools to build RPCS3 on Linux. Some of them can be installed through your favorite package manager.
 
-* Clang 17+ or GCC 13+
-* [CMake 3.28.0+](https://www.cmake.org/download/)
-* [Qt 6.7.3](https://www.qt.io/download-qt-installer)
-* [Vulkan SDK 1.3.268.0](https://vulkan.lunarg.com/sdk/home) (See "Install the SDK" [here](https://vulkan.lunarg.com/doc/sdk/latest/linux/getting_started.html)) for now future SDKs don't work. You need precisely 1.3.268.0.
-* [SDL2](https://github.com/libsdl-org/SDL/releases) (for the FAudio backend)
+- Clang 17+ or GCC 13+
+- [CMake 3.28.0+](https://www.cmake.org/download/)
+- [Qt 6.7.3](https://www.qt.io/download-qt-installer)
+- [Vulkan SDK 1.3.268.0](https://vulkan.lunarg.com/sdk/home) (See "Install the SDK" [here](https://vulkan.lunarg.com/doc/sdk/latest/linux/getting_started.html)) for now future SDKs don't work. You need precisely 1.3.268.0.
+- [SDL2](https://github.com/libsdl-org/SDL/releases) (for the FAudio backend)
 
 **If you have an NVIDIA GPU, you may need to install the libglvnd package.**
 
@@ -95,26 +106,56 @@ git submodule update --init
 
 ### Windows
 
-#### Configuring the Qt plugin (if used)
+#### Building from Visual Studio **sln** solution
 
-1) Go to `Extensions->Qt VS Tools->Qt Versions`.
-2) Add the path to your Qt installation with compiler e.g. `<QtInstallFolder>\6.7.3\msvc2019_64`, version will fill in automatically.
-3) Go to `Extensions->Qt VS Tools->Options->Legacy Project Format`. (Only available in the legacy Qt plugin)
-4) Set `Build: Run pre-build setup` to `true`. (Only available in the legacy Qt plugin)
+Start Visual Studio, click on `Open a project or solution` and select the `rpcs3.sln` file inside the RPCS3's root folder
 
-#### Building the projects
+##### Configuring the Qt plugin (if used)
 
-Open `rpcs3.sln`. The recommended build configuration is `Release`. (On older revisions: `Release - LLVM`)
+1) go to `Extensions->Qt VS Tools->Qt Versions`
+2) add the path to your Qt installation with compiler e.g. `<QtInstallFolder>\6.7.3\msvc2019_64`, version will fill in automatically
+3) go to `Extensions->Qt VS Tools->Options->Legacy Project Format`. (Only available in the legacy Qt plugin)
+4) set `Build: Run pre-build setup` to `true`. (Only available in the legacy Qt plugin)
 
-You may want to download the precompiled [LLVM libs](https://github.com/RPCS3/llvm-mirror/releases/download/custom-build-win-16.0.1/llvmlibs_mt.7z) and extract them to `3rdparty\llvm\`, as well as download and extract the [additional libs](https://github.com/RPCS3/glslang/releases/latest/download/glslanglibs_mt.7z) to `lib\%CONFIGURATION%-x64\` to speed up compilation time (unoptimised/debug libs are currently not available precompiled).
+##### Building the projects
 
-If you're not using the precompiled libs, build the following projects in *__BUILD_BEFORE* folder by right-clicking on a project > *Build*.:
-* glslang
-* **Either** llvm_build **or** llvm_build_clang_cl
+**NOTE:** The recommended build configuration is `Release`. (On older revisions: `Release - LLVM`)
+
+You may want to download the precompiled [LLVM libs](https://github.com/RPCS3/llvm-mirror/releases/download/custom-build-win-16.0.1/llvmlibs_mt.7z) and extract them to `3rdparty\llvm\`,
+as well as download and extract the [additional libs](https://github.com/RPCS3/glslang/releases/latest/download/glslanglibs_mt.7z) to `lib\%CONFIGURATION%-x64\` to speed up compilation
+time (unoptimised/debug libs are currently not available precompiled).
+
+If you're not using the precompiled libs, build the following projects in `__BUILD_BEFORE` folder by right-clicking on a project and then click on `Build`:
+- `glslang`
+- either `llvm_build`
+- or `llvm_build_clang_cl`
 
 Afterwards:
 
 `Build > Build Solution`
+
+#### Building from Visual Studio **CMake** solution
+
+Start Visual Studio, click on `Open a local folder` and select the RPCS3's root folder
+
+Once the project is open on VS, from the `Solution Explorer` panel:
+1) right-click on `rpcs3` and then click on `Switch to CMake Targets View`
+2) from the `Configuration` drop-down menu select `Windows 64`
+3) right-click on `CMakeLists.txt Project` and then click on `Configure Cache`
+4) once the cache is created, `rpcs3 project` is available
+5) right-click on `rpcs3 Project` and then click on `Build All`
+6) once the build is completed, the **RPCS3** application is available under the `<rpcs3_root>\build-msvc\bin` folder
+
+#### Building from standalone CMake tool
+
+In case you preferred to install and use the standalone **CMake** tool:
+1) move on the RPCS3's root folder
+2) execute the following commands to create the cache and to build the application, respectively:
+  ```
+  cmake --preset msvc
+  cmake --build build-msvc
+  ```
+3) once the build is completed, the **RPCS3** application is available under the `<rpcs3_root>\build-msvc\bin` folder
 
 ### Linux
 
@@ -122,7 +163,7 @@ While still in the project root:
 
 1) `cd .. && mkdir --parents rpcs3_build && cd rpcs3_build`
 2) `cmake ../rpcs3/ && make` or `CXX=g++-13 CC=gcc-13 cmake ../rpcs3/ && make` to force these compilers
-3) Run RPCS3 with `./bin/rpcs3`
+3) run RPCS3 with `./bin/rpcs3`
 
 If compiling for ARM, pass the flag `-DUSE_NATIVE_INSTRUCTIONS=OFF` to the cmake command. This resolves some Neon errors when compiling our SIMD headers.
 
