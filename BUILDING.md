@@ -22,13 +22,13 @@ The following tools are required to build RPCS3 on Windows 10 or later:
 - [Qt 6.7.3](https://www.qt.io/download-qt-installer)
 - [Vulkan SDK 1.3.268.0](https://vulkan.lunarg.com/sdk/home) (see "Install the SDK" [here](https://vulkan.lunarg.com/doc/sdk/latest/windows/getting_started.html)) for now future SDKs don't work. You need precisely 1.3.268.0.
 
-In order to build **RPCS3**, **Qt** libs need to be detected. To detect the libs:
+In order to build **RPCS3** with the `sln` solution (with **Visual Studio**), **Qt** libs need to be detected. To detect the libs:
 - add and set the `QTDIR` environment variable, e.g. `<QtInstallFolder>\6.7.3\msvc2019_64\`
 - or use the [Visual Studio Qt Plugin](https://marketplace.visualstudio.com/items?itemName=TheQtCompany.QtVisualStudioTools2019)
 
   **NOTE:** If you have issues with the **Visual Studio Qt Plugin**, you may want to uninstall it and install the [Legacy Qt Plugin](https://marketplace.visualstudio.com/items?itemName=TheQtCompany.LEGACYQtVisualStudioTools2019) instead.
 
-In order to build **RPCS3** with **CMake** solution (with both **Visual Studio** and standalone **CMake** tool):
+In order to build **RPCS3** with the `CMake` solution (with both **Visual Studio** and standalone **CMake** tool):
 - add and set the `CMAKE_PREFIX_PATH` environment variable to the **Qt** libs path, e.g. `<QtInstallFolder>\6.7.3\msvc2019_64\`
 
 ### Linux
