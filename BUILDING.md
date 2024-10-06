@@ -146,9 +146,9 @@ Once the project is open on VS, from the `Solution Explorer` panel:
 1) right-click on `rpcs3` and then click on `Switch to CMake Targets View`
 2) from the `Configuration` drop-down menu select `Windows x64`
 3) right-click on `CMakeLists.txt Project` and then click on `Configure Cache`
-4) once the cache is created, `rpcs3 project` is available
+4) once the cache is created, the `rpcs3 project` will be available
 5) right-click on `rpcs3 Project` and then click on `Build All`
-6) once the build is completed, the **RPCS3** application is available under the `<rpcs3_root>\build-msvc\bin` folder
+6) once the build is completed, the **RPCS3** application will be available under the `<rpcs3_root>\build-msvc\bin` folder
 
 #### Building with standalone CMake tool
 
@@ -159,7 +159,7 @@ In case you preferred to install and use the standalone **CMake** tool:
   cmake --preset msvc
   cmake --build build-msvc
   ```
-3) once the build is completed, the **RPCS3** application is available under the `<rpcs3_root>\build-msvc\bin` folder
+3) once the build is completed, the **RPCS3** application will be available under the `<rpcs3_root>\build-msvc\bin` folder
 
 ### Linux
 
