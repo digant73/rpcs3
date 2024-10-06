@@ -28,7 +28,7 @@ In order to build **RPCS3** with **Qt** libs:
 
   **NOTE:** If you have issues with the **Visual Studio Qt Plugin**, you may want to uninstall it and install the [Legacy Qt Plugin](https://marketplace.visualstudio.com/items?itemName=TheQtCompany.LEGACYQtVisualStudioTools2019) instead.
 
-In order to build **RPCS3** with **CMake** (with both **Visual Studio** and standalone **CMake** tool):
+In order to build **RPCS3** with **CMake** solution (with both **Visual Studio** and standalone **CMake** tool):
 - add and set the `CMAKE_PREFIX_PATH` environment variable to the **Qt** libs path, e.g. `<QtInstallFolder>\6.7.3\msvc2019_64\`
 
 ### Linux
