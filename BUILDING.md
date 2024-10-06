@@ -15,7 +15,7 @@ The following tools are required to build RPCS3 on Windows 10 or later:
   - **Visual Studio 2022** integrates **CMake 3.29+** and it also supports both the `sln` solution (`.sln`, `.vcxproj`) and `CMake` solution (`CMakeLists.txt`, `CMakePresets.json`).
      See sections [Building from Visual Studio sln solution](#building-from-visual-studio-sln-solution) and [Building from Visual Studio CMake solution](#building-from-visual-studio-cmake-solution)
      on how to build the project on Visual Studio.
-  - Install and use the standalone **CMake** tool just in case of your preference.
+  - Install and use this standalone **CMake** tool just in case of your preference.
 
 - [Python 3.6+](https://www.python.org/downloads/) (add to PATH)
 - [Qt 6.7.3](https://www.qt.io/download-qt-installer)
@@ -25,9 +25,9 @@ In order to build **RPCS3** with **Qt** libs:
 - add and set the `QTDIR` environment variable, e.g. `<QtInstallFolder>\6.7.3\msvc2019_64\`
 - or use the [Visual Studio Qt Plugin](https://marketplace.visualstudio.com/items?itemName=TheQtCompany.QtVisualStudioTools2019)
 
-  **NOTE:** If you have issues with the Qt plugin, you may want to uninstall the Qt Plugin and install the [Legacy Qt Plugin](https://marketplace.visualstudio.com/items?itemName=TheQtCompany.LEGACYQtVisualStudioTools2019) instead.
+  **NOTE:** If you have issues with the Visual Studio Qt plugin, you may want to uninstall it and install the [Legacy Qt Plugin](https://marketplace.visualstudio.com/items?itemName=TheQtCompany.LEGACYQtVisualStudioTools2019) instead.
 
-In order to build **RPCS3** with **CMake** (with both VS 2022 or standalone CMake):
+In order to build **RPCS3** with **CMake** (with both Visual Studio or standalone CMake tool):
 - add and set the `CMAKE_PREFIX_PATH` environment variable to the **Qt** libs path, e.g. `<QtInstallFolder>\6.7.3\msvc2019_64\`
 
 ### Linux
