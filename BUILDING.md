@@ -13,9 +13,10 @@ The following tools are required to build RPCS3 on Windows 10 or later:
 
   **NOTES:**
   - **Visual Studio 2022** integrates **CMake 3.29+** and it also supports both the `sln` solution (`.sln`, `.vcxproj`) and `CMake` solution (`CMakeLists.txt`, `CMakePresets.json`).
-     See sections [Building with Visual Studio sln solution](#building-with-visual-studio-sln-solution) and [Building with Visual Studio CMake solution](#building-with-visual-studio-cmake-solution)
-     on how to build the project with **Visual Studio**.
-  - Install and use this standalone **CMake** tool just in case of your preference.
+    See sections [Building with Visual Studio sln solution](#building-with-visual-studio-sln-solution) and [Building with Visual Studio CMake solution](#building-with-visual-studio-cmake-solution)
+    on how to build the project with **Visual Studio**.
+  - Install and use this standalone **CMake** tool just in case of your preference. See section [Building with standalone CMake tool](#building-with-standalone-cmake-tool) on how to build the project
+    with standalone **CMake** tool.
 
 - [Python 3.6+](https://www.python.org/downloads/) (add to PATH)
 - [Qt 6.7.3](https://www.qt.io/download-qt-installer)
