@@ -22,8 +22,7 @@ The following tools are required to build RPCS3 on Windows 10 or later:
 - [Qt 6.7.3](https://www.qt.io/download-qt-installer)
 - [Vulkan SDK 1.3.268.0](https://vulkan.lunarg.com/sdk/home) (see "Install the SDK" [here](https://vulkan.lunarg.com/doc/sdk/latest/windows/getting_started.html)) for now future SDKs don't work. You need precisely 1.3.268.0.
 
-The `sln` solution available only on **Visual Studio** is the preferred building solution. It allows to build the **RPCS3** application in `Release` and `Debug` mode
-while the `CMake` solution is currently limited to `Debug` mode only.
+The `sln` solution available only on **Visual Studio** is the preferred building solution. It easily allows to build the **RPCS3** application in `Release` and `Debug` mode.
 
 In order to build **RPCS3** with the `sln` solution (with **Visual Studio**), **Qt** libs need to be detected. To detect the libs:
 - add and set the `QTDIR` environment variable, e.g. `<QtInstallFolder>\6.7.3\msvc2019_64\`
@@ -157,10 +156,10 @@ Once the project is open on VS, from the `Solution Explorer` panel:
 
 In case you preferred to install and use the standalone **CMake** tool:
 1) move on the RPCS3's root folder
-2) execute the following commands to create the cache and to build the application, respectively:
+2) execute the following commands to create the cache and to build the application (use `--config Debug` instead of `--config Release` if you want to build in `Debug` mode), respectively:
   ```
   cmake --preset msvc
-  cmake --build build-msvc
+  cmake --build build-msvc --config Release
   ```
 3) once the build is completed, the **RPCS3** application will be available under the `<rpcs3_root>\build-msvc\bin` folder
 
