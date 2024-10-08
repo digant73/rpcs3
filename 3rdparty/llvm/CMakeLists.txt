@@ -17,8 +17,10 @@ if(WITH_LLVM)
 		option(LLVM_CCACHE_BUILD OFF)
 		set(LLVM_ENABLE_WARNINGS OFF CACHE BOOL "Enable compiler warnings.")
 
-		# For Windows x86 (not Windows AArch64 etc.)
-		if(WIN32 AND (COMPILER_X86 OR (MSVC AND NOT COMPILER_ARM)))
+		# For Windows x86 (not Windows AArch64).
+		# Check on MSVC is needed due to COMPILER_X86, COMPILER_ARM etc. are not set/supported by the MSVC compiler, if used.
+		# Furthermore, the MSVC compiler is not available/supported on Windows AArch64
+		if(WIN32 AND (COMPILER_X86 OR MSVC))
 			set(LLVM_USE_INTEL_JITEVENTS ON)
 		endif()
 
