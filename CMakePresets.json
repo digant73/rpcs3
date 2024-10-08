@@ -48,6 +48,7 @@
         "strategy": "external"
       },
       "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release",
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
         "USE_FAUDIO": "OFF",
         "USE_PRECOMPILED_HEADERS": "ON",
@@ -65,6 +66,18 @@
           ]
         }
       }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "msvc-debug",
+      "configurePreset": "msvc",
+      "configuration": "Debug"
+    },
+    {
+      "name": "msvc-release",
+      "configurePreset": "msvc",
+      "configuration": "Release"
     }
   ]
 }

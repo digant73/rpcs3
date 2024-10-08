@@ -154,7 +154,7 @@ elseif(UNIX)
 elseif(WIN32)
     if(MSVC)
         add_custom_command(TARGET rpcs3 POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" -E copy "${PROJECT_BINARY_DIR}/3rdparty/OpenAL/openal-soft/${CMAKE_BUILD_TYPE}/OpenAL32.dll" "$<TARGET_FILE_DIR:rpcs3>"
+            COMMAND "${CMAKE_COMMAND}" -E copy "${PROJECT_BINARY_DIR}/3rdparty/OpenAL/openal-soft/$<CONFIG>/OpenAL32.dll" "$<TARGET_FILE_DIR:rpcs3>"
             COMMAND "${CMAKE_COMMAND}" -E remove "${CMAKE_SOURCE_DIR}/bin/rpcs3.exe")
     endif()
     add_custom_command(TARGET rpcs3 POST_BUILD
