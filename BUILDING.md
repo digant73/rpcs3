@@ -133,14 +133,14 @@ time (unoptimised/debug libs are currently not available precompiled).
 
 If you're not using the precompiled libs, those dependency libs need to be compiled first. From the `Solution Explorer` panel:
 1) expand `__BUILD_BEFORE`
-2) from the `Solution Configurations` drop-down menu select `Release` (select `Debug` if you want to build in `Debug` mode)
+2) from the `Solution Configurations` drop-down menu, select `Release` (select `Debug` if you want to build in `Debug` mode)
 3) one after another, right-click on the following projects and then click on `Build` to build the selected lib:
    - `glslang`
    - either `llvm_build`
    - or `llvm_build_clang_cl` (if you installed **clang** on VS)
 
 In order to build the **RPCS3** application:
-1) from the `Solution Configurations` drop-down menu select `Release` (select `Debug` if you want to build in `Debug` mode)
+1) from the `Solution Configurations` drop-down menu, select `Release` (select `Debug` if you want to build in `Debug` mode)
 
    **NOTE:** In case you previously compiled the dependency libs under `__BUILD_BEFORE`, you have also to select the same build configuration (e.g. `Release`, if you compiled the dependency libs in `Release` mode)
 
@@ -153,7 +153,7 @@ Start **Visual Studio**, click on `Open a local folder` and select the RPCS3's r
 
 Once the project is open on VS, from the `Solution Explorer` panel:
 1) right-click on `rpcs3` and then click on `Switch to CMake Targets View`
-2) from the `Configuration` drop-down menu select `msvc-release` (select `msvc-debug` if you want to build in `Debug` mode)
+2) from the `Configuration` drop-down menu, select `msvc-release` (select `msvc-debug` if you want to build in `Debug` mode)
 3) right-click on `CMakeLists.txt Project` and then click on `Configure Cache`
 4) once the cache is created, the `rpcs3 project` will be available
 5) right-click on `rpcs3 Project` and then click on `Build All`
@@ -163,7 +163,8 @@ Once the project is open on VS, from the `Solution Explorer` panel:
 
 In case you preferred to install and use the standalone **CMake** tool:
 1) move on the RPCS3's root folder
-2) execute the following commands to create the cache and to build the application (for the build use `--preset msvc-debug` instead of `--preset msvc-release` if you want to build in `Debug` mode), respectively:
+2) execute the following commands to create the cache and to build the application (for the build, use `--preset msvc-debug` instead of `--preset msvc-release` if you want to build in `Debug` mode), respectively:
+
    ```
    cmake --preset msvc
    cmake --build --preset msvc-release
