@@ -131,14 +131,21 @@ You may want to download the precompiled [LLVM libs](https://github.com/RPCS3/ll
 as well as download and extract the [additional libs](https://github.com/RPCS3/glslang/releases/latest/download/glslanglibs_mt.7z) to `lib\%CONFIGURATION%-x64\` to speed up compilation
 time (unoptimised/debug libs are currently not available precompiled).
 
-If you're not using the precompiled libs, build the following projects in `__BUILD_BEFORE` folder by right-clicking on a project and then click on `Build`:
-- `glslang`
-- either `llvm_build`
-- or `llvm_build_clang_cl`
+If you're not using the precompiled dependency libs, from the `Solution Explorer` panel:
+1) expand `__BUILD_BEFORE`
+2) from the `Solution Configurations` drop-down menu select `Release` (select `Debug` if you want to build in `Debug` mode)
+3) one after another, right-click on the following projects and then click on `Build` to build the selected lib:
+  - `glslang`
+  - either `llvm_build`
+  - or `llvm_build_clang_cl` (if you installed **clang** on VS)
 
-Afterwards:
+In order to build the **RPCS3** application:
+1) from the `Solution Configurations` drop-down menu select `Release` (select `Debug` if you want to build in `Debug` mode)
 
-`Build > Build Solution`
+  **NOTE:** In case you previously compiled the dependency libs under `__BUILD_BEFORE`, you have also to select the same build configuration (e.g. `Release` if you compiled the dependency libs in `Release` mode)
+
+2) click on `Build` menu and then on `Build Solution`
+3) once the build is completed, the **RPCS3** application will be available under the `<rpcs3_root>\bin` folder
 
 #### Building with Visual Studio CMake solution
 
@@ -146,7 +153,7 @@ Start **Visual Studio**, click on `Open a local folder` and select the RPCS3's r
 
 Once the project is open on VS, from the `Solution Explorer` panel:
 1) right-click on `rpcs3` and then click on `Switch to CMake Targets View`
-2) from the `Configuration` drop-down menu select `Windows x64`
+2) from the `Configuration` drop-down menu select `msvc-release` (select `msvc-debug` if you want to build in `Debug` mode)
 3) right-click on `CMakeLists.txt Project` and then click on `Configure Cache`
 4) once the cache is created, the `rpcs3 project` will be available
 5) right-click on `rpcs3 Project` and then click on `Build All`
