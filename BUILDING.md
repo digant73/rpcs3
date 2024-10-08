@@ -156,14 +156,14 @@ Once the project is open on VS, from the `Solution Explorer` panel:
 2) from the `Configuration` drop-down menu, select `msvc-release` (select `msvc-debug` if you want to build in `Debug` mode)
 3) right-click on `CMakeLists.txt Project` and then click on `Configure Cache`
 4) once the cache is created, the `rpcs3 project` will be available
-5) right-click on `rpcs3 Project` and then click on `Build All`
+5) right-click on `rpcs3 Project` and then click on `Build All` (or click on `Build` menu and then on `Build All`)
 6) once the build is completed, the **RPCS3** application will be available under the `<rpcs3_root>\build-msvc\bin` folder
 
 #### Building with standalone CMake tool
 
 In case you preferred to install and use the standalone **CMake** tool:
 1) move on the RPCS3's root folder
-2) execute the following commands to create the cache and to build the application (for the build, use `--preset msvc-debug` instead of `--preset msvc-release` if you want to build in `Debug` mode), respectively:
+2) execute the following commands to create the cache and to build the application (for the build, use `--preset msvc-debug` if you want to build in `Debug` mode), respectively:
 
    ```
    cmake --preset msvc
