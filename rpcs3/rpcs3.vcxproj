@@ -90,7 +90,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>DbgHelp.lib;Ole32.lib;gdi32.lib;hidapi.lib;libusb-1.0.lib;winmm.lib;miniupnpc_static.lib;rtmidi.lib;imm32.lib;ksuser.lib;version.lib;OpenAL32.lib;XAudio.lib;GLGSRender.lib;shlwapi.lib;VKGSRender.lib;vulkan-1.lib;wolfssl.lib;libcurl.lib;Wldap32.lib;glslang.lib;OSDependent.lib;OGLCompiler.lib;SPIRV.lib;MachineIndependent.lib;GenericCodeGen.lib;Advapi32.lib;user32.lib;zlib.lib;zstd.lib;libpng16.lib;asmjit.lib;yaml-cpp.lib;discord-rpc.lib;emucore.lib;dxgi.lib;shell32.lib;Qt6Core.lib;Qt6Gui.lib;Qt6Widgets.lib;Qt6Concurrent.lib;Qt6Multimedia.lib;Qt6MultimediaWidgets.lib;Qt6Svg.lib;Qt6SvgWidgets.lib;7zip.lib;libcubeb.lib;cubeb.lib;soundtouch.lib;Avrt.lib;SDL.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\hlsl\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\SPIRV\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\OGLCompilersDLL\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\OSDependent\Windows\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\$(CONFIGURATION);$(SolutionDir)3rdparty\discord-rpc\lib;$(SolutionDir)build\lib\$(CONFIGURATION)-$(PLATFORM);$(QTDIR)\lib;$(VULKAN_SDK)\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\hlsl\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\SPIRV\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\OGLCompilersDLL\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\glslang\OSDependent\Windows\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\glslang\$(CONFIGURATION);$(SolutionDir)3rdparty\discord-rpc\lib;$(SolutionDir)build\lib\$(CONFIGURATION)-$(PLATFORM);$(QTDIR)\lib;$(VULKAN_SDK)\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
@@ -112,7 +112,9 @@
       <PreprocessorDefinitions>_WINDOWS;UNICODE;WIN32;WIN64;WITH_DISCORD_RPC;QT_UI;QT_NO_DEBUG;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <PostBuildEvent>
-      <Command>$(QTDIR)\bin\windeployqt --no-compiler-runtime --no-opengl-sw --no-patchqt --no-translations --no-quick --no-system-d3d-compiler --no-quick-import --plugindir "$(TargetDir)qt6\plugins" --release "$(TargetPath)"</Command>
+      <Command>
+        $(QTDIR)\bin\windeployqt --no-compiler-runtime --no-opengl-sw --no-patchqt --no-translations --no-quick --no-system-d3d-compiler --no-quick-import --plugindir "$(TargetDir)qt6\plugins" --release "$(TargetPath)"
+      </Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
@@ -139,7 +141,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>DbgHelp.lib;Ole32.lib;gdi32.lib;hidapi.lib;libusb-1.0.lib;winmm.lib;miniupnpc_static.lib;rtmidi.lib;imm32.lib;ksuser.lib;version.lib;OpenAL32.lib;XAudio.lib;GLGSRender.lib;shlwapi.lib;VKGSRender.lib;vulkan-1.lib;wolfssl.lib;libcurl.lib;Wldap32.lib;glslangd.lib;OSDependentd.lib;OGLCompilerd.lib;SPIRVd.lib;MachineIndependentd.lib;GenericCodeGend.lib;Advapi32.lib;user32.lib;zlib.lib;zstd.lib;libpng16.lib;asmjit.lib;yaml-cpp.lib;discord-rpc.lib;emucore.lib;dxgi.lib;shell32.lib;Qt6Cored.lib;Qt6Guid.lib;Qt6Widgetsd.lib;Qt6Concurrentd.lib;Qt6Multimediad.lib;Qt6MultimediaWidgetsd.lib;Qt6Svgd.lib;Qt6SvgWidgetsd.lib;7zip.lib;libcubeb.lib;cubeb.lib;soundtouch.lib;Avrt.lib;SDL.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\hlsl\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\SPIRV\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\OGLCompilersDLL\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\OSDependent\Windows\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\$(CONFIGURATION);$(SolutionDir)3rdparty\discord-rpc\lib;$(SolutionDir)build\lib\$(CONFIGURATION)-$(PLATFORM);$(QTDIR)\lib;$(VULKAN_SDK)\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\hlsl\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\SPIRV\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\OGLCompilersDLL\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\glslang\OSDependent\Windows\$(CONFIGURATION);$(SolutionDir)build\tmp\glslang-$(Configuration)-$(Platform)\glslang\$(CONFIGURATION);$(SolutionDir)3rdparty\discord-rpc\lib;$(SolutionDir)build\lib\$(CONFIGURATION)-$(PLATFORM);$(QTDIR)\lib;$(VULKAN_SDK)\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'"  /VERBOSE %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
@@ -162,7 +164,9 @@
       <PreprocessorDefinitions>_WINDOWS;UNICODE;WIN32;WIN64;QT_UI;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <PostBuildEvent>
-      <Command>$(QTDIR)\bin\windeployqt --no-compiler-runtime --no-opengl-sw --no-patchqt --no-translations --no-quick --no-system-d3d-compiler --no-quick-import --plugindir "$(TargetDir)qt6\plugins" --debug "$(TargetPath)"</Command>
+      <Command>
+        $(QTDIR)\bin\windeployqt --no-compiler-runtime --no-opengl-sw --no-patchqt --no-translations --no-quick --no-system-d3d-compiler --no-quick-import --plugindir "$(TargetDir)qt6\plugins" --debug "$(TargetPath)"
+      </Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
