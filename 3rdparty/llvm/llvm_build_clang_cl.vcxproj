@@ -63,37 +63,41 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>
     </NMakePreprocessorDefinitions>
+    <OutDir>$(SolutionDir)build\lib\$(Configuration)-$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\</IntDir>
     <NMakeBuildCommandLine>
       $(CmakeDebugCLI)
       ninja
+      ninja install
     </NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>
       $(CmakeCleanCLI)
       $(CmakeDebugCLI)
       ninja
+      ninja install
     </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>
       $(CmakeCleanCLI)
     </NMakeCleanCommandLine>
-    <OutDir>$(SolutionDir)build\lib\$(Configuration)-$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakePreprocessorDefinitions />
+    <OutDir>$(SolutionDir)build\lib\$(Configuration)-$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\</IntDir>
     <NMakeBuildCommandLine>
       $(CmakeReleaseCLI)
       ninja
+      ninja install
     </NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>
       $(CmakeCleanCLI)
       $(CmakeReleaseCLI)
       ninja
+      ninja install
     </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>
       $(CmakeCleanCLI)
     </NMakeCleanCommandLine>
-    <OutDir>$(SolutionDir)build\lib\$(Configuration)-$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
