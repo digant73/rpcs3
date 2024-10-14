@@ -57,11 +57,11 @@
     </CmakeDebugCLI>
     <CmakeCopyCLI>
       echo Copying..
-      copy /y $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\OpenAL32.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)
+      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\OpenAL32.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)
     </CmakeCopyCLI>
     <CmakeCleanCLI>
       echo Cleaning..
-      del /q $(SolutionDir)build\lib\$(Configuration)-$(Platform)\OpenAL32.lib
+      del $(SolutionDir)build\lib\$(Configuration)-$(Platform)\OpenAL32.lib
       rmdir /s /q $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)
     </CmakeCleanCLI>
   </PropertyGroup>
