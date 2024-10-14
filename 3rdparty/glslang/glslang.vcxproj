@@ -51,15 +51,15 @@
     <IntDir>$(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\</IntDir>
     <NMakeBuildCommandLine>
       $(CmakeReleaseCLI)
-      msbuild.exe $(IntDir)ALL_BUILD.vcxproj /t:build /p:Configuration=Release /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
+      msbuild.exe $(IntDir)\ALL_BUILD.vcxproj /t:build /p:Configuration=Release /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
     </NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>
       $(CmakeReleaseCLI)
-      msbuild.exe $(IntDir)ALL_BUILD.vcxproj /t:rebuild /p:Configuration=Release /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
+      msbuild.exe $(IntDir)\ALL_BUILD.vcxproj /t:rebuild /p:Configuration=Release /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
     </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>
       $(CmakeReleaseCLI)
-      msbuild.exe $(IntDir)ALL_BUILD.vcxproj /t:clean /p:Configuration=Release /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
+      msbuild.exe $(IntDir)\ALL_BUILD.vcxproj /t:clean /p:Configuration=Release /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
       rmdir /s /q $(IntDir)
     </NMakeCleanCommandLine>
   </PropertyGroup>
@@ -68,15 +68,15 @@
     <IntDir>$(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\</IntDir>
     <NMakeBuildCommandLine>
       $(CmakeDebugCLI)
-      msbuild.exe $(IntDir)ALL_BUILD.vcxproj /t:build /p:Configuration=Debug /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
+      msbuild.exe $(IntDir)\ALL_BUILD.vcxproj /t:build /p:Configuration=Debug /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
     </NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>
       $(CmakeDebugCLI)
-      msbuild.exe $(IntDir)ALL_BUILD.vcxproj /t:rebuild /p:Configuration=Debug /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
+      msbuild.exe $(IntDir)\ALL_BUILD.vcxproj /t:rebuild /p:Configuration=Debug /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
     </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>
       $(CmakeDebugCLI)
-      msbuild.exe $(IntDir)ALL_BUILD.vcxproj /t:clean /p:Configuration=Debug /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
+      msbuild.exe $(IntDir)\ALL_BUILD.vcxproj /t:clean /p:Configuration=Debug /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
       rmdir /s /q $(IntDir)
     </NMakeCleanCommandLine>
   </PropertyGroup>
