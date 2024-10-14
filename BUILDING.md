@@ -143,7 +143,7 @@ If you're not using the precompiled libs, those dependency libs need to be compi
    - `llvm_build`
    - or `llvm_build_clang_cl` (if you have also the **clang** compiler installed on VS)
 
-**NOTE:** Compiled dependency libs have priority over precompiled libs, if configured. It means that they will always be referenced and linked in case the precompiled libs are also available.
+**NOTE:** Compiled dependency libs have priority over precompiled libs, if installed. It means that they will always be referenced and linked in case the precompiled libs are also available.
 
 In order to build the **RPCS3** application:
 1) from the `Solution Configurations` drop-down menu, select `Release` (select `Debug` if you want to build in `Debug` mode)
