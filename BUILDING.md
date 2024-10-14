@@ -133,7 +133,7 @@ To speed up the compilation time, you may want to download and install some of t
 - [additional libs](https://github.com/RPCS3/glslang/releases/latest/download/glslanglibs_mt.7z): extract them to `<rpcs3_root>\build\lib\%CONFIGURATION%-x64`
   (e.g. `<rpcs3_root>\build\lib\Release-x64`; create the path if not already existing)
 
-**NOTE:** Unoptimised/debug libs are currently not available precompiled for both **LLVM** and **glslang**. Trying to use them when building the application in `Debug` mode will provide a linking error and a not found lib error respectively.
+**NOTE:** Unoptimised/debug libs are currently not available precompiled for both **LLVM** and **glslang**. Trying to use them when building the **RPCS3** application in `Debug` mode will provide a linking error and a not found lib error respectively.
 
 If you're not using the precompiled libs, those dependency libs need to be compiled first. From the `Solution Explorer` panel:
 1) expand `__BUILD_BEFORE`
@@ -141,7 +141,7 @@ If you're not using the precompiled libs, those dependency libs need to be compi
 3) one after another, right-click on the following projects and then click on `Build` to build the selected lib:
    - `glslang`
    - `llvm_build`
-   - or `llvm_build_clang_cl` (if you have also **clang** compiler installed on VS)
+   - or `llvm_build_clang_cl` (if you have also the **clang** compiler installed on VS)
 
 **NOTE:** Compiled dependency libs have priority over precompiled libs, if configured. It means that they will always be referenced and linked in case the precompiled libs are also available.
 
