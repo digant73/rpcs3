@@ -127,9 +127,9 @@ Start **Visual Studio**, click on `Open a project or solution` and select the `r
 
 **NOTE:** The recommended build configuration is `Release`. (On older revisions: `Release - LLVM`)
 
-You may want to download the precompiled [LLVM libs](https://github.com/RPCS3/llvm-mirror/releases/download/custom-build-win-16.0.1/llvmlibs_mt.7z) and extract them to `<rpcs3_root>\build\lib_ext` (the path
-needs to be created), as well as to download and extract the [additional libs](https://github.com/RPCS3/glslang/releases/latest/download/glslanglibs_mt.7z) to `<rpcs3_root>\build\lib\%CONFIGURATION%-x64`
-(e.g. `<rpcs3_root>\build\lib\Release-x64`; create the path if not already existing) to speed up the compilation time.
+You may want to download the precompiled [LLVM libs](https://github.com/RPCS3/llvm-mirror/releases/download/custom-build-win-16.0.1/llvmlibs_mt.7z) and extract them to `<rpcs3_root>\build\lib_ext\%CONFIGURATION%-x64`
+(e.g. `<rpcs3_root>\build\lib_ext\Release-x64`; the path needs to be created), as well as to download and extract the [additional libs](https://github.com/RPCS3/glslang/releases/latest/download/glslanglibs_mt.7z)
+to `<rpcs3_root>\build\lib\%CONFIGURATION%-x64` (e.g. `<rpcs3_root>\build\lib\Release-x64`; create the path if not already existing) to speed up the compilation time.
 
 **NOTE:** Unoptimised/debug libs are currently not available precompiled for both **LLVM** and **glslang**. Trying to use them when building the application in `Debug` mode will provide a linking error and a not found lib error respectively.
 
