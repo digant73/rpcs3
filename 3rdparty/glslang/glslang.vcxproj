@@ -47,13 +47,11 @@
     <CmakeCopyCLI>
       echo Copying..
       mkdir $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
-      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\hlsl\$(CONFIGURATION)\HLSL?.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
-      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\SPIRV\$(CONFIGURATION)\SPIRV?.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
-      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\OGLCompilersDLL\$(CONFIGURATION)\OGLCompiler?.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
-      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\glslang\OSDependent\Windows\$(CONFIGURATION)\OSDependent?.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
-      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\glslang\$(CONFIGURATION)\glslang?.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
-      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\glslang\$(CONFIGURATION)\MachineIndependent?.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
-      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\glslang\$(CONFIGURATION)\GenericCodeGen?.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\hlsl\$(CONFIGURATION)\*.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\SPIRV\$(CONFIGURATION)\*.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\OGLCompilersDLL\$(CONFIGURATION)\*.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\glslang\OSDependent\Windows\$(CONFIGURATION)\*.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\glslang\$(CONFIGURATION)\*.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
     </CmakeCopyCLI>
     <CmakeCleanCLI>
       echo Cleaning..
