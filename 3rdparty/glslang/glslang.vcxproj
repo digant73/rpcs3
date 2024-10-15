@@ -58,6 +58,7 @@
     <CmakeCleanCLI>
       echo Cleaning..
       rmdir /s /q $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+      rmdir /s /q $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)
     </CmakeCleanCLI>
     <PropsAbsPath>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\buildfiles\msvc\common_default.props'))</PropsAbsPath>
   </PropertyGroup>
