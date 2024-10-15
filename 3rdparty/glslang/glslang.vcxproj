@@ -44,6 +44,21 @@
     <CmakeDebugCLI>call vsdevcmd.bat -arch=amd64
       cmake -G $(CmakeGenerator) -A x64 -DCMAKE_BUILD_TYPE="Debug" -DLLVM_USE_CRT_DEBUG=MDd -DLLVM_USE_CRT_RELEASE=MT -DENABLE_OPT=OFF -S glslang -B $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)
     </CmakeDebugCLI>
+    <CmakeCopyCLI>
+      echo Copying..
+      mkdir $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\hlsl\$(CONFIGURATION)\HLSL?.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\SPIRV\$(CONFIGURATION)\SPIRV?.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\OGLCompilersDLL\$(CONFIGURATION)\OGLCompiler?.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\glslang\OSDependent\Windows\$(CONFIGURATION)\OSDependent?.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\glslang\$(CONFIGURATION)\glslang?.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\glslang\$(CONFIGURATION)\MachineIndependent?.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+      copy $(SolutionDir)build\tmp\$(ProjectName)-$(Configuration)-$(Platform)\glslang\$(CONFIGURATION)\GenericCodeGen?.lib $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+    </CmakeCopyCLI>
+    <CmakeCleanCLI>
+      echo Cleaning..
+      rmdir /s /q $(SolutionDir)build\lib\$(Configuration)-$(Platform)\$(ProjectName)
+    </CmakeCleanCLI>
     <PropsAbsPath>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\buildfiles\msvc\common_default.props'))</PropsAbsPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -52,15 +67,17 @@
     <NMakeBuildCommandLine>
       $(CmakeReleaseCLI)
       msbuild.exe $(IntDir)\ALL_BUILD.vcxproj /t:build /p:Configuration=Release /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
+      $(CmakeCopyCLI)
     </NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>
       $(CmakeReleaseCLI)
       msbuild.exe $(IntDir)\ALL_BUILD.vcxproj /t:rebuild /p:Configuration=Release /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
+      $(CmakeCopyCLI)
     </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>
       $(CmakeReleaseCLI)
       msbuild.exe $(IntDir)\ALL_BUILD.vcxproj /t:clean /p:Configuration=Release /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
-      rmdir /s /q $(IntDir)
+      $(CmakeCleanCLI)
     </NMakeCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -69,15 +86,17 @@
     <NMakeBuildCommandLine>
       $(CmakeDebugCLI)
       msbuild.exe $(IntDir)\ALL_BUILD.vcxproj /t:build /p:Configuration=Debug /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
+      $(CmakeCopyCLI)
     </NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>
       $(CmakeDebugCLI)
       msbuild.exe $(IntDir)\ALL_BUILD.vcxproj /t:rebuild /p:Configuration=Debug /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
+      $(CmakeCopyCLI)
     </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>
       $(CmakeDebugCLI)
       msbuild.exe $(IntDir)\ALL_BUILD.vcxproj /t:clean /p:Configuration=Debug /p:ForceImportBeforeCppTargets="$(PropsAbsPath)" /m
-      rmdir /s /q $(IntDir)
+      $(CmakeCleanCLI)
     </NMakeCleanCommandLine>
   </PropertyGroup>
   <ItemDefinitionGroup>
