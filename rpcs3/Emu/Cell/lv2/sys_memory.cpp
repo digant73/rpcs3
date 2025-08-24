@@ -131,6 +131,8 @@ error_code sys_memory_allocate(cpu_thread& cpu, u64 size, u64 flags, vm::ptr<u32
 		return {CELL_ENOMEM, dct.size - dct.used};
 	}
 
+//	sys_memory.error("____ALLOC - ALLOC: size: %u avail: %u amount: %lu", dct.size, dct.size - dct.used, size);
+
 	if (const auto area = reserve_map(static_cast<u32>(size), align))
 	{
 		if (const u32 addr = area->alloc(static_cast<u32>(size), nullptr, align))
@@ -154,6 +156,8 @@ error_code sys_memory_allocate(cpu_thread& cpu, u64 size, u64 flags, vm::ptr<u32
 	}
 
 	dct.free(size);
+//	sys_memory.error("ALLOC - FREE: size: %u avail: %u amount: %lu", dct.size, dct.size - dct.used, size);
+
 	return CELL_ENOMEM;
 }
 
@@ -205,6 +209,8 @@ error_code sys_memory_allocate_from_container(cpu_thread& cpu, u64 size, u32 cid
 		return {ct.ret, ct->size - ct->used};
 	}
 
+//	sys_memory.error("____CONTAINER - ALLOC: size: %u avail: %u amount: %lu", ct->size, ct->size - ct->used, size);
+
 	if (const auto area = reserve_map(static_cast<u32>(size), align))
 	{
 		if (const u32 addr = area->alloc(static_cast<u32>(size)))
@@ -225,6 +231,8 @@ error_code sys_memory_allocate_from_container(cpu_thread& cpu, u64 size, u32 cid
 		}
 	}
 
+//	sys_memory.error("____CONTAINER - FREE: size: %u avail: %u amount: %lu", ct->size, ct->size - ct->used, size);
+
 	ct->free(size);
 	return CELL_ENOMEM;
 }
@@ -244,6 +252,7 @@ error_code sys_memory_free(cpu_thread& cpu, u32 addr)
 
 	const auto size = (ensure(vm::dealloc(addr)));
 	reader_lock{id_manager::g_mutex}, ct->free(size);
+//	sys_memory.error("____FREE - FREE: size: %u avail: %u amount: %lu", ct->size, ct->size - ct->used, size);
 	return CELL_OK;
 }
 
@@ -346,7 +355,11 @@ error_code sys_memory_container_create(cpu_thread& cpu, vm::ptr<u32> cid, u64 si
 		return CELL_ENOMEM;
 	}
 
+//	dct.free(size);
+//	sys_memory.error("____CREATE - ALLOC: size: %u avail: %u amount: %lu", dct.size, dct.size - dct.used, size);
+
 	// Create the memory container
+//	if (const u32 id = idm::make<lv2_memory_container>(static_cast<u32>(dct.used), true))
 	if (const u32 id = idm::make<lv2_memory_container>(static_cast<u32>(size), true))
 	{
 		cpu.check_state();
@@ -355,6 +368,8 @@ error_code sys_memory_container_create(cpu_thread& cpu, vm::ptr<u32> cid, u64 si
 	}
 
 	dct.free(size);
+//	sys_memory.error("____CREATE - FREE: size: %u avail: %u amount: %lu", dct.size, dct.size - dct.used, size);
+
 	return CELL_EAGAIN;
 }
 
@@ -389,6 +404,7 @@ error_code sys_memory_container_destroy(cpu_thread& cpu, u32 cid)
 
 	// Return "physical memory" to the default container
 	g_fxo->get<lv2_memory_container>().free(ct->size);
+//	sys_memory.error("____DESTROY - FREE: size: %u avail: %u amount: %lu", ct->size, ct->size - ct->used, ct->size);
 
 	return CELL_OK;
 }

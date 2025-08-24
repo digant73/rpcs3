@@ -82,6 +82,8 @@ struct lv2_memory_container
 	// Values greater than UINT32_MAX will fail
 	u32 take(u64 amount)
 	{
+//		sys_memory.error("____TAKE: size: %u avail: %u amount: %lu", size, size - used, amount);
+
 		auto [_, result] = used.fetch_op([&](u32& value) -> u32
 		{
 			if (size - value >= amount)
@@ -98,6 +100,8 @@ struct lv2_memory_container
 
 	u32 free(u64 amount)
 	{
+//		sys_memory.error("____FREE: size: %u avail: %u amount: %lu", size, size - used, amount);
+
 		auto [_, result] = used.fetch_op([&](u32& value) -> u32
 		{
 			if (value >= amount)

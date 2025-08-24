@@ -60,7 +60,20 @@ namespace rsx
 			utils::memory_protect(ptr, length, prot);
 			return;
 		}
+/*
+		// Basically an unlock op. Flush if any overlap is detected
+		for (const auto& block : g_deferred_mprotect_queue)
+		{
+			if (block.overlaps(start, end))
+			{
+				if (prot == utils::protection::no) // avoids performance drop on "Need for Speed Most Wanted"
+					mm_flush_mprotect_queue_internal(); // fixes "Split Second"
 
+				utils::memory_protect(ptr, length, prot); // fixes "Motorsport Pacific Rift"
+				return;
+			}
+		}
+*/
 		// No, Ro, etc.
 		mm_defer_mprotect_internal(start, length, prot);
 	}

@@ -60,6 +60,7 @@ void ppu_thread_exit(ppu_thread& ppu, ppu_opcode_t, be_t<u32>*, struct ppu_intrp
 	if (auto dct = g_fxo->try_get<lv2_memory_container>())
 	{
 		dct->free(ppu.stack_size);
+//		sys_ppu_thread.error("____PPU EXIT - FREE: size: %u avail: %u", dct->size, dct->size - dct->used);
 	}
 
 	if (ppu.call_history.index)
@@ -506,6 +507,8 @@ error_code _sys_ppu_thread_create(ppu_thread& ppu, vm::ptr<u64> thread_id, vm::p
 	{
 		return {CELL_ENOMEM, dct.size - dct.used};
 	}
+
+//	sys_ppu_thread.error("____SPU CREATE - ALLOC: size: %u avail: %u amount: %lu", dct.size, dct.size - dct.used, stack_size);
 
 	const vm::addr_t stack_base{vm::alloc(stack_size, vm::stack, 4096)};
 

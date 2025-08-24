@@ -2238,6 +2238,8 @@ error_code sys_fs_fcntl(ppu_thread& ppu, u32 fd, u32 op, vm::ptr<void> _arg, u32
 					return CELL_ENOMEM;
 				}
 
+//				sys_fs.error("____FS FCNTL - ALLOC: size: %u avail: %u amount: %lu", ct.size, ct.size - ct.used, actual_size);
+
 				return {};
 			});
 

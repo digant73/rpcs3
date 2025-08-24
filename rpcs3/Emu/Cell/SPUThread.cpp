@@ -1475,7 +1475,27 @@ std::vector<std::pair<u32, u32>> spu_thread::dump_callstack_list() const
 
 			return !addr || !is_exec_code(addr, { ls, SPU_LS_SIZE });
 		};
+/*
+		if (is_invalid(lr))
+		{
+			if (first)
+			{
+				// Function hasn't saved LR, could be because it's a leaf function
+				// Use LR directly instead
+				lr = gpr0;
 
+				if (is_invalid(lr))
+				{
+					// Skip it, workaround
+					continue;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+		else if (first && lr._u32[3] != gpr0._u32[3] && !is_invalid(gpr0))*/
 		if (first && lr._u32[3] != gpr0._u32[3] && !is_invalid(gpr0))
 		{
 			// Detect functions with no stack or before LR has been stored
@@ -1589,6 +1609,7 @@ std::vector<std::pair<u32, u32>> spu_thread::dump_callstack_list() const
 		}
 		else if (!first)
 		{
+//			call_stack_list.emplace_back(lr._u32[3], sp);
 			break;
 		}
 
