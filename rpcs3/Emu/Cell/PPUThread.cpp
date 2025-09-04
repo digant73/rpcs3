@@ -3656,6 +3656,7 @@ static bool ppu_store_reservation(ppu_thread& ppu, u32 addr, u64 reg_value)
 					{
 						//ppu.state += cpu_flag::wait; // if this line is enabled, sporadic flashing missing textures are displayed in games affected by that issue
 						vm::reservation_notifier_notify(addr);
+						break;
 					}
 
 					// Instead of skipping the notification, postpone the notification; giving a chance the PPU
