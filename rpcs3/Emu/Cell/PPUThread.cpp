@@ -2326,10 +2326,11 @@ void ppu_thread::cpu_wait(bs_t<cpu_flag> old)
 	if (u32 addr = res_notify)
 	{
 		res_notify = 0;
+		res_notify_postpone_streak = 0;
 
-		if (res_notify_time == vm::reservation_notifier_count_index(addr).second)
+		if (res_notify_time + 128 == (vm::reservation_acquire(addr) & -128))
 		{
-			vm::reservation_notifier_notify(addr);
+			vm::reservation_notifier_notify(addr, res_notify_time);
 		}
 	}
 
@@ -3117,7 +3118,6 @@ static T ppu_load_acquire_reservation(ppu_thread& ppu, u32 addr)
 	{
 		// Reload "cached" reservation of previous succeeded conditional store
 		// This seems like a hardware feature according to cellSpursAddUrgentCommand function
-		ppu.rtime -= 128;
 	}
 	else
 	{
@@ -3614,89 +3614,69 @@ static bool ppu_store_reservation(ppu_thread& ppu, u32 addr, u64 reg_value)
 	{
 		extern atomic_t<u32> liblv2_begin, liblv2_end;
 
+		u32 notify = ppu.res_notify;
+
 		// Avoid notifications from lwmutex or sys_spinlock
-		if (new_data != old_data && (ppu.cia < liblv2_begin || ppu.cia >= liblv2_end))
+		const bool is_liblv2_or_null = (ppu.cia >= liblv2_begin && ppu.cia < liblv2_end);
+
+		if (!is_liblv2_or_null)
 		{
-			u32 notify = ppu.res_notify;
-			u32 notify_avail = notify;
+			// Try to postpone notification to when PPU is asleep or join notifications on the same address
+			// This also optimizes a mutex - won't notify after lock is aqcuired (prolonging the critical section duration), only notifies on unlock
+			const u32 count = vm::reservation_notifier_count(addr, rtime);
 
-			if (notify)
+			switch (count)
 			{
-				if (ppu.res_notify_time == vm::reservation_notifier_count_index(notify).second)
-				{
-					ppu.state += cpu_flag::wait;
-					vm::reservation_notifier_notify(notify);
-				}
-				else
-				{
-					notify = 0;
-				}
-
-				ppu.res_notify = 0;
+			case 0:
+			{
+				// Nothing to do
+				break;
 			}
-
-			// If "addr" != pending notification's address (when "notify" != 0), or a pending notification (when "notify" != 0)
-			// has not been sent ("notify" was set to "0"), or there is no pending notification at all (when "notify" == 0)
-			if ((addr ^ notify) & -128)
+			case 1:
 			{
-				// Try to postpone notification to when PPU is asleep or join notifications on the same address
-				// This also optimizes a mutex - won't notify after lock is aqcuired (prolonging the critical section duration), only notifies on unlock
-				const auto [count, index] = vm::reservation_notifier_count_index(addr);
-
-				switch (count)
+				// Postpone notifications if there is no pending one OR if there is likely a complex operation on reservation going on
+				// Which consists of multiple used addresses
+				if (ppu.res_notify_postpone_streak <= 4)
 				{
-				case 0:
-				{
-					// Force a notification sending (skipping the notification postponing)
-					//
-					// NOTE: It can improve performance (e.g. in Resistance FOM) and/or fix graphical issues
-					//       (e.g. red flashing missing textures in Call of Duty 3)
-					//
-					if (g_cfg.core.ppu_postponed_notification_disabled)
-					{
-						//ppu.state += cpu_flag::wait; // if this line is enabled, sporadic flashing missing textures are displayed in games affected by that issue
-						vm::reservation_notifier_notify(addr);
-						break;
-					}
-
-					// Instead of skipping the notification, postpone the notification; giving a chance the PPU
-					// will hopefully join notifications on the same address
-					//
-					// NOTE: It improves performance a lot in some games (e.g. in Resistance FOM) and/or fixes
-					//       graphical issues (e.g. red flashing missing textures in Call of Duty 3)
-					//
-					ppu.res_notify = addr;
-					ppu.res_notify_time = index;
-					break;
-				}
-				case 1:
-				{
-					if (!notify_avail) // If there was no pending notification, postpone the notification
+					if (!notify || ((notify & -128) == (addr & -128) && new_data != old_data))
 					{
 						ppu.res_notify = addr;
-						ppu.res_notify_time = index;
+						ppu.res_notify_time = rtime;
+						ppu.res_notify_postpone_streak++;
+						notify = 0;
 						break;
 					}
-
-					// Otherwise (a pending notification has been managed; no matter if it has been sent or not),
-					// notify the notification
-					[[fallthrough]];
 				}
-				default:
+
+				// Notify both
+				[[fallthrough]];
+			}
+			default:
+			{
+				if (cpu_flag::wait - ppu.state)
 				{
-					if (!notify) // If there was no pending notification or a pending notification has not been sent
-					{
-						ppu.state += cpu_flag::wait;
-					}
+					ppu.state += cpu_flag::wait;
+				}
 
-					vm::reservation_notifier_notify(addr);
-					break;
-				}
-				}
+				vm::reservation_notifier_notify(addr, rtime);
+				break;
+			}
+			}
+		}
+
+		if (notify)
+		{
+			if (auto waiter = vm::reservation_notifier_notify(notify, ppu.res_notify_time, true))
+			{
+				ppu.state += cpu_flag::wait;
+				waiter->notify_all();
 			}
 
-			static_cast<void>(ppu.test_stopped());
+			ppu.res_notify = 0;
+			ppu.res_notify_postpone_streak = 0;
 		}
+
+		static_cast<void>(ppu.test_stopped());
 
 		if (addr == ppu.last_faddr)
 		{
@@ -3705,7 +3685,6 @@ static bool ppu_store_reservation(ppu_thread& ppu, u32 addr, u64 reg_value)
 
 		ppu.last_faddr = 0;
 		ppu.res_cached = ppu.raddr;
-		ppu.rtime += 128;
 		ppu.raddr = 0;
 		return true;
 	}
@@ -3716,14 +3695,15 @@ static bool ppu_store_reservation(ppu_thread& ppu, u32 addr, u64 reg_value)
 	// And on failure it has some time to do something else
 	if (notify && ((addr ^ notify) & -128))
 	{
-		if (ppu.res_notify_time == vm::reservation_notifier_count_index(notify).second)
+		if (auto waiter = vm::reservation_notifier_notify(notify, ppu.res_notify_time, true))
 		{
 			ppu.state += cpu_flag::wait;
-			vm::reservation_notifier_notify(notify);
+			waiter->notify_all();
 			static_cast<void>(ppu.test_stopped());
 		}
 
 		ppu.res_notify = 0;
+		ppu.res_notify_postpone_streak = 0;
 	}
 
 	ppu.raddr = 0;
