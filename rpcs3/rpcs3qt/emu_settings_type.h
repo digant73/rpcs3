@@ -20,7 +20,6 @@ enum class emu_settings_type
 	MFCDebug,
 	MaxLLVMThreads,
 	LLVMPrecompilation,
-	EnableTSX,
 	AccurateSpuDMA,
 	AccurateClineStores,
 	AccurateRSXAccess,
@@ -108,6 +107,7 @@ enum class emu_settings_type
 	ForceHwMSAAResolve,
 	DisableAsyncHostMM,
 	UseReBAR,
+	RecordWithOverlays,
 
 	// Performance Overlay
 	PerfOverlayEnabled,
@@ -232,7 +232,6 @@ inline static const std::map<emu_settings_type, cfg_location> settings_location 
 	{ emu_settings_type::MFCDebug,                 { "Core", "MFC Debug"}},
 	{ emu_settings_type::MaxLLVMThreads,           { "Core", "Max LLVM Compile Threads"}},
 	{ emu_settings_type::LLVMPrecompilation,       { "Core", "LLVM Precompilation"}},
-	{ emu_settings_type::EnableTSX,                { "Core", "Enable TSX"}},
 	{ emu_settings_type::AccurateSpuDMA,           { "Core", "Accurate SPU DMA"}},
 	{ emu_settings_type::AccurateClineStores,      { "Core", "Accurate Cache Line Stores"}},
 	{ emu_settings_type::AccurateRSXAccess,        { "Core", "Accurate RSX reservation access"}},
@@ -311,6 +310,7 @@ inline static const std::map<emu_settings_type, cfg_location> settings_location 
 	{ emu_settings_type::OutputScalingMode,          { "Video", "Output Scaling Mode"}},
 	{ emu_settings_type::ForceHwMSAAResolve,         { "Video", "Force Hardware MSAA Resolve"}},
 	{ emu_settings_type::DisableAsyncHostMM,         { "Video", "Disable Asynchronous Memory Manager"}},
+	{ emu_settings_type::RecordWithOverlays,         { "Video", "Record With Overlays"}},
 
 	// Vulkan
 	{ emu_settings_type::VulkanAsyncTextureUploads,           { "Video", "Vulkan", "Asynchronous Texture Streaming 2"}},
