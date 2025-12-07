@@ -1331,7 +1331,7 @@ void game_list_frame::ShowSingleSelectionContextMenu(const game_info& gameinfo, 
 			RemoveSPUCache(serial, true);
 		});
 	}
-	
+
 	if (has_hdd1_cache_dir)
 	{
 		QAction* remove_hdd1_cache = remove_menu->addAction(tr("&Remove HDD1 Cache"));
