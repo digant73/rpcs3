@@ -3030,13 +3030,11 @@ void game_list_frame::BatchCreateCPUCaches(const std::vector<game_info>& games, 
 	if (total == 0)
 	{
 		QMessageBox::information(this, tr("LLVM Cache Batch Creation"), tr("No titles found"), QMessageBox::Ok);
-		Q_EMIT NotifyBatchedGameActionFinished();
 		return;
 	}
 
 	if (!m_gui_settings->GetBootConfirmation(this))
 	{
-		Q_EMIT NotifyBatchedGameActionFinished();
 		return;
 	}
 
@@ -3060,7 +3058,6 @@ void game_list_frame::BatchCreateCPUCaches(const std::vector<game_info>& games, 
 	{
 		if (serial.empty())
 		{
-			Q_EMIT NotifyBatchedGameActionFinished();
 			return false;
 		}
 
