@@ -3009,7 +3009,6 @@ void game_list_frame::BatchCreateCPUCaches(const std::vector<game_info>& games, 
 {
 	if (is_interactive && QMessageBox::question(this, tr("Confirm Creation"), tr("Create LLVM cache?")) != QMessageBox::Yes)
 	{
-		Q_EMIT NotifyBatchedGameActionFinished();
 		return;
 	}
 
