@@ -2459,8 +2459,8 @@ void main_window::CreateActions()
 	m_icon_size_act_group->addAction(ui->setIconSizeLargeAct);
 
 	m_list_mode_act_group = new QActionGroup(this);
-	m_list_mode_act_group->addAction(ui->setlistModeListAct);
-	m_list_mode_act_group->addAction(ui->setlistModeGridAct);
+	m_list_mode_act_group->addAction(ui->setListModeAct);
+	m_list_mode_act_group->addAction(ui->setGridModeAct);
 }
 
 void main_window::CreateConnects()
@@ -3359,7 +3359,7 @@ void main_window::CreateConnects()
 
 	connect(m_list_mode_act_group, &QActionGroup::triggered, this, [this](QAction* act)
 	{
-		const bool is_list_act = act == ui->setlistModeListAct;
+		const bool is_list_act = act == ui->setListModeAct;
 		if (is_list_act == m_is_list_mode)
 			return;
 
@@ -3399,8 +3399,8 @@ void main_window::CreateConnects()
 
 	connect(ui->toolbar_controls, &QAction::triggered, this, open_pad_settings);
 	connect(ui->toolbar_config, &QAction::triggered, this, [=]() { open_settings(0); });
-	connect(ui->toolbar_list, &QAction::triggered, this, [this]() { ui->setlistModeListAct->trigger(); });
-	connect(ui->toolbar_grid, &QAction::triggered, this, [this]() { ui->setlistModeGridAct->trigger(); });
+	connect(ui->toolbar_list, &QAction::triggered, this, [this]() { ui->setListModeAct->trigger(); });
+	connect(ui->toolbar_grid, &QAction::triggered, this, [this]() { ui->setGridModeAct->trigger(); });
 
 	connect(ui->sizeSlider, &QSlider::valueChanged, this, &main_window::ResizeIcons);
 	connect(ui->sizeSlider, &QSlider::sliderReleased, this, [this]
@@ -3650,9 +3650,9 @@ void main_window::ConfigureGuiFromSettings()
 
 	// handle icon size options
 	if (m_is_list_mode)
-		ui->setlistModeListAct->setChecked(true);
+		ui->setListModeAct->setChecked(true);
 	else
-		ui->setlistModeGridAct->setChecked(true);
+		ui->setGridModeAct->setChecked(true);
 
 	const int icon_size_index = m_gui_settings->GetValue(m_is_list_mode ? gui::gl_iconSize : gui::gl_iconSizeGrid).toInt();
 	m_other_slider_pos = m_gui_settings->GetValue(!m_is_list_mode ? gui::gl_iconSize : gui::gl_iconSizeGrid).toInt();
