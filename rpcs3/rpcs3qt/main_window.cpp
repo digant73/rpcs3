@@ -3401,16 +3401,11 @@ void main_window::CreateConnects()
 		}
 	});
 
-	connect(ui->toolbar_controls, &QAction::triggered, this, open_pad_settings);
 	connect(ui->toolbar_config, &QAction::triggered, this, [=]() { open_settings(0); });
-<<<<<<< HEAD
+	connect(ui->toolbar_controls, &QAction::triggered, this, open_pad_settings);
+	connect(ui->toolbar_rpcn, &QAction::triggered, this, open_rpcn_settings);
 	connect(ui->toolbar_list, &QAction::triggered, this, [this]() { ui->setListModeAct->trigger(); });
 	connect(ui->toolbar_grid, &QAction::triggered, this, [this]() { ui->setGridModeAct->trigger(); });
-=======
-	connect(ui->toolbar_list, &QAction::triggered, this, [this]() { ui->setlistModeListAct->trigger(); });
-	connect(ui->toolbar_grid, &QAction::triggered, this, [this]() { ui->setlistModeGridAct->trigger(); });
-	connect(ui->toolbar_rpcn, &QAction::triggered, this, open_rpcn_settings);
->>>>>>> remotes/rpcs3/master
 
 	connect(ui->sizeSlider, &QSlider::valueChanged, this, &main_window::ResizeIcons);
 	connect(ui->sizeSlider, &QSlider::sliderReleased, this, [this]
