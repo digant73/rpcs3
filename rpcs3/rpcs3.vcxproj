@@ -110,7 +110,7 @@
     </ResourceCompile>
     <PostBuildEvent>
       <Command>
-        $(QTDIR)\bin\windeployqt6 --no-compiler-runtime --no-opengl-sw --no-patchqt --no-translations --no-quick --no-system-d3d-compiler --no-system-dxc-compiler --no-quick-import --plugindir "$(TargetDir)qt6\plugins" --release "$(TargetPath)"
+        $(QTDIR)\bin\windeployqt6 --no-compiler-runtime --no-opengl-sw --no-patchqt --no-quick --no-system-d3d-compiler --no-system-dxc-compiler --no-quick-import --plugindir "$(TargetDir)qt6\plugins" --translationdir "$(TargetDir)qt6\translations" --release "$(TargetPath)"
         xcopy /y /d "$(SolutionDir)3rdparty\opencv\opencv\opencv412\build\x64\bin\opencv_world4120.dll" "$(OutDir)"
       </Command>
     </PostBuildEvent>
@@ -169,7 +169,7 @@
     </ResourceCompile>
     <PostBuildEvent>
       <Command>
-        $(QTDIR)\bin\windeployqt6 --no-compiler-runtime --no-opengl-sw --no-patchqt --no-translations --no-quick --no-system-d3d-compiler --no-system-dxc-compiler --no-quick-import --plugindir "$(TargetDir)qt6\plugins" --debug "$(TargetPath)"
+        $(QTDIR)\bin\windeployqt6 --no-compiler-runtime --no-opengl-sw --no-patchqt --no-quick --no-system-d3d-compiler --no-system-dxc-compiler --no-quick-import --plugindir "$(TargetDir)qt6\plugins" --translationdir "$(TargetDir)qt6\translations"  --debug "$(TargetPath)"
         xcopy /y /d "$(SolutionDir)3rdparty\opencv\opencv\opencv412\build\x64\bin\opencv_world4120.dll" "$(OutDir)"
       </Command>
     </PostBuildEvent>
@@ -201,6 +201,8 @@
     <ClCompile Include="Input\raw_mouse_handler.cpp" />
     <ClCompile Include="Input\ps_move_handler.cpp" />
     <ClCompile Include="Input\sdl_pad_handler.cpp" />
+    <ClCompile Include="Input\sdl_camera_handler.cpp" />
+    <ClCompile Include="Input\sdl_camera_video_sink.cpp" />
     <ClCompile Include="Input\sdl_instance.cpp" />
     <ClCompile Include="Input\skateboard_pad_handler.cpp" />
     <ClCompile Include="main.cpp" />
@@ -1070,6 +1072,8 @@
     <ClInclude Include="Input\raw_mouse_handler.h" />
     <ClInclude Include="Input\ps_move_handler.h" />
     <ClInclude Include="Input\sdl_pad_handler.h" />
+    <ClInclude Include="Input\sdl_camera_handler.h" />
+    <ClInclude Include="Input\sdl_camera_video_sink.h" />
     <ClInclude Include="Input\sdl_instance.h" />
     <ClInclude Include="Input\skateboard_pad_handler.h" />
     <ClInclude Include="main_application.h" />
