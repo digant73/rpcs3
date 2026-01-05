@@ -1302,9 +1302,9 @@ void game_list_frame::ShowSingleSelectionContextMenu(const game_info& gameinfo, 
 		});
 	}
 
-	const std::string cache_base_dir = rpcs3::utils::get_existing_dir(rpcs3::utils::get_cache_dir_by_serial(serial));
+	const std::string cache_base_dir = fs::get_path_if_dir(rpcs3::utils::get_cache_dir_by_serial(serial));
 	const bool has_hdd1_cache_dir = !rpcs3::utils::get_dir_list(rpcs3::utils::get_hdd1_cache_dir(), serial).empty();
-	const std::string savestates_dir = rpcs3::utils::get_existing_dir(rpcs3::utils::get_savestates_dir(serial));
+	const std::string savestates_dir = fs::get_path_if_dir(rpcs3::utils::get_savestates_dir(serial));
 
 	if (!cache_base_dir.empty())
 	{
@@ -1569,10 +1569,10 @@ void game_list_frame::ShowSingleSelectionContextMenu(const game_info& gameinfo, 
 	QMenu* open_folder_menu = menu.addMenu(tr("&Open Folder"));
 
 	const bool is_disc_game = QString::fromStdString(current_game.category) == cat::cat_disc_game;
-	const std::string data_dir = rpcs3::utils::get_existing_dir(rpcs3::utils::get_data_dir(serial));
-	const std::string captures_dir = rpcs3::utils::get_existing_dir(rpcs3::utils::get_captures_dir());
-	const std::string recordings_dir = rpcs3::utils::get_existing_dir(rpcs3::utils::get_recordings_dir(serial));
-	const std::string screenshots_dir = rpcs3::utils::get_existing_dir(rpcs3::utils::get_screenshots_dir(serial));
+	const std::string data_dir = fs::get_path_if_dir(rpcs3::utils::get_data_dir(serial));
+	const std::string captures_dir = fs::get_path_if_dir(rpcs3::utils::get_captures_dir());
+	const std::string recordings_dir = fs::get_path_if_dir(rpcs3::utils::get_recordings_dir(serial));
+	const std::string screenshots_dir = fs::get_path_if_dir(rpcs3::utils::get_screenshots_dir(serial));
 	std::set<std::string> data_dir_list;
 
 	if (is_disc_game)

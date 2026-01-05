@@ -301,11 +301,6 @@ namespace rpcs3::utils
 		return get_screenshots_dir() + serial;
 	}
 
-	std::string get_existing_dir(const std::string& dir)
-	{
-		return fs::is_dir(dir) ? dir : "";
-	}
-
 	std::set<std::string> get_dir_list(const std::string& base_dir, const std::string& serial)
 	{
 		std::set<std::string> dir_list;

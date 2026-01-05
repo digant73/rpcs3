@@ -60,7 +60,6 @@ namespace rpcs3::utils
 	std::string get_recordings_dir(const std::string& serial);
 	std::string get_screenshots_dir(const std::string& serial);
 
-	std::string get_existing_dir(const std::string& dir);
 	std::set<std::string> get_dir_list(const std::string& base_dir, const std::string& serial);
 	std::set<std::string> get_file_list(const std::string& base_dir, const std::string& serial);
 
