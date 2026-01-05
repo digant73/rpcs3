@@ -1413,7 +1413,7 @@ void game_list_frame::ShowSingleSelectionContextMenu(const game_info& gameinfo, 
 	QAction* game_info = manage_game_menu->addAction(tr("&Game Info"));
 	connect(game_info, &QAction::triggered, this, [this, gameinfo]()
 	{
-		DialogGameInfo({gameinfo});
+		ShowGameInfoDialog({gameinfo});
 	});
 
 	// Custom Images menu
@@ -1743,7 +1743,7 @@ void game_list_frame::ShowSingleSelectionContextMenu(const game_info& gameinfo, 
 	});
 	connect(remove_game, &QAction::triggered, this, [this, gameinfo]
 	{
-		DialogRemoveGame({gameinfo});
+		ShowRemoveGameDialog({gameinfo});
 	});
 	connect(configure_patches, &QAction::triggered, this, [this, gameinfo]()
 	{
@@ -2000,14 +2000,14 @@ void game_list_frame::ShowMultiSelectionContextMenu(const std::vector<game_info>
 	QAction* remove_game = manage_game_menu->addAction(tr("&Remove Game"));
 	connect(remove_game, &QAction::triggered, this, [this, games]()
 	{
-		DialogRemoveGame(games);
+		ShowRemoveGameDialog(games);
 	});
 
 	// Game info
 	QAction* game_info = manage_game_menu->addAction(tr("&Game Info"));
 	connect(game_info, &QAction::triggered, this, [this, games]()
 	{
-		DialogGameInfo(games);
+		ShowGameInfoDialog(games);
 	});
 
 	menu.exec(global_pos);
@@ -2261,7 +2261,7 @@ game_list_frame::content_info game_list_frame::GetContentInfo(const std::vector<
 	return content_info;
 }
 
-void game_list_frame::DialogRemoveGame(const std::vector<game_info>& games)
+void game_list_frame::ShowRemoveGameDialog(const std::vector<game_info>& games)
 {
 	if (games.empty())
 		return;
@@ -2376,7 +2376,7 @@ void game_list_frame::DialogRemoveGame(const std::vector<game_info>& games)
 	}
 }
 
-void game_list_frame::DialogGameInfo(const std::vector<game_info>& games)
+void game_list_frame::ShowGameInfoDialog(const std::vector<game_info>& games)
 {
 	if (games.empty())
 		return;

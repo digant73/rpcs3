@@ -189,8 +189,8 @@ private:
 	void ClearContentList(bool refresh = false);
 	content_info GetContentInfo(const std::vector<game_info>& games);
 
-	void DialogRemoveGame(const std::vector<game_info>& games);
-	void DialogGameInfo(const std::vector<game_info>& games);
+	void ShowRemoveGameDialog(const std::vector<game_info>& games);
+	void ShowGameInfoDialog(const std::vector<game_info>& games);
 
 	static bool IsGameRunning(const std::string& serial);
 	bool ValidateRemoval(const std::string& serial, const std::string& path, const std::string& desc, bool is_interactive = false);
