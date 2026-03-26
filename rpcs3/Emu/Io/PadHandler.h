@@ -36,10 +36,6 @@ public:
 	u8 small_motor{0};
 	bool new_output_data{true};
 	steady_clock::time_point last_output;
-	std::set<u64> trigger_code_left{};
-	std::set<u64> trigger_code_right{};
-	std::array<std::set<u64>, 4> axis_code_left{};
-	std::array<std::set<u64>, 4> axis_code_right{};
 
 	struct color
 	{
@@ -94,12 +90,12 @@ struct pad_capabilities
 };
 
 using pad_preview_values = std::array<int, 6>;
-using pad_callback = std::function<void(u16 /*button_value*/, std::string /*button_name*/, std::string /*pad_name*/, u32 /*battery_level*/, pad_preview_values, pad_capabilities)>;
+using pad_callback = std::function<void(std::map<std::string, u16>&& /*pressed_buttons*/, std::array<std::pair<std::string, u16>, 2>&& /*pressed_sticks*/, std::string /*pad_name*/, u32 /*battery_level*/, pad_preview_values&&, pad_capabilities&&)>;
 using pad_fail_callback = std::function<void(std::string /*pad_name*/)>;
 
 using motion_preview_values = std::array<u16, 4>;
-using motion_callback = std::function<void(std::string /*pad_name*/, motion_preview_values /*preview_values*/)>;
-using motion_fail_callback = std::function<void(std::string /*pad_name*/, motion_preview_values /*preview_values*/)>;
+using motion_callback = std::function<void(std::string /*pad_name*/, motion_preview_values&& /*preview_values*/)>;
+using motion_fail_callback = std::function<void(std::string /*pad_name*/, motion_preview_values&& /*preview_values*/)>;
 
 class PadHandlerBase
 {
@@ -196,76 +192,11 @@ protected:
 
 	std::shared_ptr<Pad> m_pad_for_pad_settings;
 
-	static std::set<u32> narrow_set(const std::set<u64>& src);
+	// Search an unordered map for a string value and return the found combos
+	static std::vector<std::set<u32>> find_key_combos(const std::unordered_map<u32, std::string>& map, const std::string& cfg_string);
 
-	// Search an unordered map for a string value and return found keycode
-	template <typename S, typename T>
-	static std::set<T> FindKeyCodes(const std::unordered_map<S, std::string>& map, const cfg::string& cfg_string, bool fallback = true)
-	{
-		std::set<T> key_codes;
-
-		const std::string& def = cfg_string.def;
-		const std::vector<std::string> names = cfg_pad::get_buttons(cfg_string.to_string());
-		T def_code = umax;
-
-		for (const std::string& nam : names)
-		{
-			for (const auto& [code, name] : map)
-			{
-				if (name == nam)
-				{
-					key_codes.insert(static_cast<T>(code));
-				}
-
-				if (fallback && name == def)
-					def_code = static_cast<T>(code);
-			}
-		}
-
-		if (!key_codes.empty())
-		{
-			return key_codes;
-		}
-
-		if (fallback)
-		{
-			if (!names.empty())
-				input_log.error("FindKeyCode for [name = %s] returned with [def_code = %d] for [def = %s]", cfg_string.to_string(), def_code, def);
-
-			if (def_code != umax)
-			{
-				return { def_code };
-			}
-		}
-
-		return {};
-	}
-
-	// Search an unordered map for a string value and return found keycode
-	template <typename S, typename T>
-	static std::set<T> FindKeyCodes(const std::unordered_map<S, std::string>& map, const std::vector<std::string>& names)
-	{
-		std::set<T> key_codes;
-
-		for (const std::string& name : names)
-		{
-			for (const auto& [code, nam] : map)
-			{
-				if (nam == name)
-				{
-					key_codes.insert(static_cast<T>(code));
-					break;
-				}
-			}
-		}
-
-		if (!key_codes.empty())
-		{
-			return key_codes;
-		}
-
-		return {};
-	}
+	// Search an unordered map for a combo and return the found key codes
+	static std::set<u32> find_key_codes(const std::unordered_map<u32, std::string>& map, const pad::combo& combo);
 
 	// Get normalized trigger value based on the range defined by a threshold
 	u16 NormalizeTriggerInput(u16 value, u32 threshold) const;
@@ -375,23 +306,23 @@ public:
 
 private:
 	virtual std::shared_ptr<PadDevice> get_device(const std::string& /*device*/) { return nullptr; }
-	virtual bool get_is_left_trigger(const std::shared_ptr<PadDevice>& /*device*/, u64 /*keyCode*/) { return false; }
-	virtual bool get_is_right_trigger(const std::shared_ptr<PadDevice>& /*device*/, u64 /*keyCode*/) { return false; }
-	virtual bool get_is_left_stick(const std::shared_ptr<PadDevice>& /*device*/, u64 /*keyCode*/) { return false; }
-	virtual bool get_is_right_stick(const std::shared_ptr<PadDevice>& /*device*/, u64 /*keyCode*/) { return false; }
-	virtual bool get_is_touch_pad_motion(const std::shared_ptr<PadDevice>& /*device*/, u64 /*keyCode*/) { return false; }
+	virtual bool get_is_left_trigger(const std::shared_ptr<PadDevice>& /*device*/, u32 /*keyCode*/) { return false; }
+	virtual bool get_is_right_trigger(const std::shared_ptr<PadDevice>& /*device*/, u32 /*keyCode*/) { return false; }
+	virtual bool get_is_left_stick(const std::shared_ptr<PadDevice>& /*device*/, u32 /*keyCode*/) { return false; }
+	virtual bool get_is_right_stick(const std::shared_ptr<PadDevice>& /*device*/, u32 /*keyCode*/) { return false; }
+	virtual bool get_is_touch_pad_motion(const std::shared_ptr<PadDevice>& /*device*/, u32 /*keyCode*/) { return false; }
 	virtual PadHandlerBase::connection update_connection(const std::shared_ptr<PadDevice>& /*device*/) { return connection::disconnected; }
 	virtual void get_extended_info(const pad_ensemble& /*binding*/) {}
 	virtual void apply_pad_data(const pad_ensemble& /*binding*/) {}
-	virtual std::unordered_map<u64, u16> get_button_values(const std::shared_ptr<PadDevice>& /*device*/) { return {}; }
-	virtual pad_preview_values get_preview_values(const std::unordered_map<u64, u16>& /*data*/) { return {}; }
+	virtual std::unordered_map<u32, u16> get_button_values(const std::shared_ptr<PadDevice>& /*device*/) { return {}; }
+	virtual pad_preview_values get_preview_values(const std::unordered_map<u32, u16>& /*data*/, const std::vector<std::string>& /*buttons*/){ return {}; }
 
 	void get_orientation(const pad_ensemble& binding) const;
 
 protected:
-	virtual std::array<std::set<u32>, PadHandlerBase::button::button_count> get_mapped_key_codes(const std::shared_ptr<PadDevice>& device, const cfg_pad* cfg);
+	virtual std::array<std::vector<std::set<u32>>, PadHandlerBase::button::button_count> get_mapped_key_codes(const std::shared_ptr<PadDevice>& device, const cfg_pad* cfg);
 	virtual void get_mapping(const pad_ensemble& binding);
-	void TranslateButtonPress(const std::shared_ptr<PadDevice>& device, u64 keyCode, bool& pressed, u16& val, bool use_stick_multipliers, bool ignore_stick_threshold = false, bool ignore_trigger_threshold = false);
+	void TranslateButtonPress(const std::shared_ptr<PadDevice>& device, u32 keyCode, bool& pressed, u16& val, bool use_stick_multipliers, bool ignore_stick_threshold = false, bool ignore_trigger_threshold = false);
 	void init_configs();
 	cfg_pad* get_config(const std::string& pad_id);
 

@@ -190,7 +190,7 @@ public:
 		const QString resolution_scale           = tr("Scales the game's resolution by the given percentage.\nThe base resolution is always 1280x720.\nSet this value to 100% if you want to use the normal Resolution options.\nValues below 100% will usually not improve performance.");
 		const QString minimum_scalable_dimension = tr("Only framebuffers greater than this size will be upscaled.\nIncreasing this value might fix problems with missing graphics when upscaling, especially when Write Color Buffers is enabled.\nIf unsure, don't change this option.");
 		const QString dump_color                 = tr("Enable this option if you get missing graphics or broken lighting ingame.\nMight degrade performance and introduce stuttering in some cases.\nRequired for Demon's Souls.");
-		const QString vsync                      = tr("By having this off you might obtain a higher framerate at the cost of tearing artifacts in the game.");
+		const QString vsync                      = tr("Enables vertical synchronization to eliminate tearing.\nAdaptive Mode - Prefers keeping up performance. It may skip frames or even tear to avoid reducing the game's framerate.\nFull Mode - No tearing allowed even if performance is reduced. This mode will by default limit your framerate to the display's refresh rate unless overriden in the driver control panel.");
 		const QString strict_rendering_mode      = tr("Enforces strict compliance to the API specification.\nMight result in degraded performance in some games.\nCan resolve rare cases of missing graphics and flickering.\nIf unsure, don't use this option.");
 		const QString stretch_to_display_area    = tr("Overrides the aspect ratio and stretches the image to the full display area.");
 		const QString multithreaded_rsx          = tr("Offloads some RSX operations to a secondary thread.\nImproves performance for high-core processors.\nMay cause slowdown in weaker CPUs due to the extra worker thread load.");
@@ -216,10 +216,8 @@ public:
 		const QString tty_limit          = tr("Sets the maximum amount of blocks that the TTY can display.\nThis usually equals the number of lines.\nSet 0 in order to remove the limit.");
 		const QString stylesheets        = tr("Changes the overall look of RPCS3.\nChoose a stylesheet and click Apply to change between styles.");
 		const QString show_welcome       = tr("Shows the initial welcome screen upon starting RPCS3.");
-		const QString show_exit_game     = tr("Shows a confirmation dialog when the game window is being closed.");
-		const QString show_boot_game     = tr("Shows a confirmation dialog when a game was booted while another game is running.");
-		const QString show_pkg_install   = tr("Shows a dialog when packages were installed successfully.");
-		const QString show_pup_install   = tr("Shows a dialog when firmware was installed successfully.");
+		const QString show_exit_game     = tr("Shows a confirmation dialog when the game window is being closed and when a game was booted while another game is running.");
+		const QString show_pkg_install   = tr("Shows a dialog when packages and firmware were installed successfully.");
 		const QString show_obsolete_cfg  = tr("Shows a dialog when obsolete settings were found.");
 		const QString show_same_buttons  = tr("Shows a dialog in the game pad configuration when the same button was assigned twice.");
 		const QString show_restart_hint  = tr("Shows a dialog when RPCS3 is ready to restart after an update.");
@@ -230,6 +228,7 @@ public:
 		const QString uuid               = tr("This is the ID used for hardware statistics.\nIt should only be reset if you change your hardware configuration or if you copied RPCS3 to another PC.");
 		const QString pad_navigation     = tr("Use the game pad that is configured for player 1 to navigate in the GUI.");
 		const QString global_navigation  = tr("Keep control over pad navigation if RPCS3 is not the active window.");
+		const QString gui_volume         = tr("Set the audio volume of the user interface. This does not affect the ingame audio.");
 
 		// input
 
@@ -314,7 +313,7 @@ public:
 		const QString mouse_deadzones    = tr("The mouse deadzones represent the games' own deadzones on the x and y axes. Games usually enforce their own deadzones to filter out small unwanted stick movements. In consequence, mouse input feels unintuitive since it relies on immediate responsiveness. You can change these values temporarily during gameplay in order to find out the optimal values for your game (Alt+T and Alt+Y for x, Alt+U and Alt+I for y).");
 		const QString mouse_acceleration = tr("The mouse acceleration can be used to amplify your mouse movements on the x and y axes. Increase these values if your mouse movements feel too slow while playing a game. You can change these values temporarily during gameplay in order to find out the optimal values (Alt+G and Alt+H for x, Alt+J and Alt+K for y). Keep in mind that modern mice usually provide different modes and settings that can be used to change mouse movement speeds as well.");
 		const QString mouse_movement     = tr("The mouse movement mode determines how the mouse movement is translated to pad input.<br>Use the relative mode for traditional mouse movement.<br>Use the absolute mode to use the mouse's distance to the center of the screen as input value.");
-		const QString button_assignment  = tr("Left-click: remap this button.<br>Shift + Left-click: add an additional button mapping.<br>Alt + Left-click: differentiate between trigger press and release (only XInput for now).<br>Right-click: clear this button mapping.");
+		const QString button_assignment  = tr("Left-click: remap this button.<br>Shift + Left-click: add an additional button mapping.<br>Ctrl + Left-click: Create a combo by adding a button to the last mapping.<br>Alt + Left-click: differentiate between trigger press and release (only XInput for now).<br>Right-click: clear this button mapping.");
 
 	} gamepad_settings;
 };

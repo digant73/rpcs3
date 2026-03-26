@@ -1054,9 +1054,9 @@ QString emu_settings::GetLocalizedSetting(const QString& original, emu_settings_
 	case emu_settings_type::ShaderMode:
 		switch (static_cast<shader_mode>(index))
 		{
-		case shader_mode::recompiler: return tr("Legacy (single threaded)", "Shader Mode");
-		case shader_mode::async_recompiler: return tr("Async (multi threaded)", "Shader Mode");
-		case shader_mode::async_with_interpreter: return tr("Async with Shader Interpreter", "Shader Mode");
+		case shader_mode::recompiler: return tr("Legacy Recompiler (single-threaded)", "Shader Mode");
+		case shader_mode::async_recompiler: return tr("Async Recompiler (multi-threaded)", "Shader Mode");
+		case shader_mode::async_with_interpreter: return tr("Async Recompiler with Shader Interpreter", "Shader Mode");
 		case shader_mode::interpreter_only: return tr("Shader Interpreter only", "Shader Mode");
 		}
 		break;
@@ -1499,6 +1499,13 @@ QString emu_settings::GetLocalizedSetting(const QString& original, emu_settings_
 		case xfloat_accuracy::inaccurate: return tr("Inaccurate XFloat");
 		}
 		break;
+	case emu_settings_type::VSync:
+		switch (static_cast<vsync_mode>(index))
+		{
+		case vsync_mode::off: return tr("Disabled", "VSync Mode");
+		case vsync_mode::adaptive: return tr("Adaptive", "VSync Mode");
+		case vsync_mode::full: return tr("Full", "VSync Mode");
+		}
 	default:
 		break;
 	}
