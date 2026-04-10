@@ -317,9 +317,11 @@ void GLGSRender::flip(const rsx::display_flip_info_t& info)
 			// Lock to avoid modification during run-update chain
 			std::lock_guard lock(*m_overlay_manager);
 
+			const areau display_area = {0, 0, static_cast<u32>(m_frame->client_width()), static_cast<u32>(m_frame->client_height())};
 			for (const auto& view : m_overlay_manager->get_views())
 			{
-				m_ui_renderer.run(cmd, aspect_ratio, target, *view.get(), flip_vertically);
+				const areau render_area = view->use_window_space ? display_area : aspect_ratio;
+				m_ui_renderer.run(cmd, render_area, target, *view.get(), flip_vertically);
 			}
 		}
 	};
@@ -514,6 +516,19 @@ void GLGSRender::flip(const rsx::display_flip_info_t& info)
 
 	m_frame->flip(m_context);
 	rsx::thread::flip(info);
+
+	// Data sync
+	const rsx::surface_scaling_config_t active_res_scaling_config =
+	{
+		.scale_percent = static_cast<u16>(g_cfg.video.resolution_scale_percent),
+		.min_scalable_dimension = static_cast<u16>(g_cfg.video.min_scalable_dimension),
+	};
+
+	if (active_res_scaling_config != this->resolution_scaling_config)
+	{
+		m_rtts.sync_scaling_config(cmd, active_res_scaling_config);
+		this->resolution_scaling_config = active_res_scaling_config;
+	}
 
 	// Cleanup
 	m_gl_texture_cache.on_frame_end();

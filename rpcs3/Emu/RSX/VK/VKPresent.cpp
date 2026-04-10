@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "VKGSRender.h"
 #include "vkutils/buffer_object.h"
+#include "vkutils/memory.h"
 #include "Emu/RSX/Overlays/overlay_manager.h"
 #include "Emu/RSX/Overlays/overlay_debug_overlay.h"
 #include "Emu/Cell/Modules/cellVideoOut.h"
@@ -663,9 +664,11 @@ void VKGSRender::flip(const rsx::display_flip_info_t& info)
 		auto ui_renderer = vk::get_overlay_pass<vk::ui_overlay_renderer>();
 		std::lock_guard lock(*m_overlay_manager);
 
+		const areau display_area = {0, 0, static_cast<u32>(m_swapchain_dims.width), static_cast<u32>(m_swapchain_dims.height)};
 		for (const auto& view : m_overlay_manager->get_views())
 		{
-			ui_renderer->run(*m_current_command_buffer, area, fbo, single_target_pass, m_texture_upload_buffer_ring_info, *view.get());
+			const areau render_area = view->use_window_space ? display_area : area;
+			ui_renderer->run(*m_current_command_buffer, render_area, fbo, single_target_pass, m_texture_upload_buffer_ring_info, *view.get());
 		}
 	};
 
@@ -961,4 +964,32 @@ void VKGSRender::flip(const rsx::display_flip_info_t& info)
 
 	m_frame->flip(m_context);
 	rsx::thread::flip(info);
+
+	// Data sync
+	const rsx::surface_scaling_config_t active_res_scaling_config =
+	{
+		.scale_percent = static_cast<u16>(g_cfg.video.resolution_scale_percent),
+		.min_scalable_dimension = static_cast<u16>(g_cfg.video.min_scalable_dimension),
+	};
+
+	if (active_res_scaling_config != this->resolution_scaling_config)
+	{
+		// First, try to reclaim any memory since the res scale upgrade is so memory intensive
+		if (const auto severity = vk::vmm_determine_memory_load_severity();
+			severity > rsx::problem_severity::low && m_rtts.handle_memory_pressure(*m_current_command_buffer, severity))
+		{
+			flush_command_queue(true);
+		}
+
+		// Then apply the change
+		m_rtts.sync_scaling_config(*m_current_command_buffer, active_res_scaling_config);
+		this->resolution_scaling_config = active_res_scaling_config;
+
+		// Finally reclaim any unused resources
+		if (const auto severity = vk::vmm_determine_memory_load_severity();
+			severity > rsx::problem_severity::low && m_rtts.handle_memory_pressure(*m_current_command_buffer, severity))
+		{
+			flush_command_queue(true);
+		}
+	}
 }

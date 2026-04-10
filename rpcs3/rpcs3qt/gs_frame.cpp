@@ -362,7 +362,7 @@ void gs_frame::handle_shortcut(gui::shortcuts::shortcut shortcut_key, const QKey
 		{
 			Emu.after_kill_callback = []()
 			{
-				Emu.Restart();
+				Emu.Restart(true, false);
 			};
 
 			// Make sure we keep the game window opened
@@ -793,7 +793,7 @@ f64 gs_frame::client_display_rate()
 {
 	f64 rate = 20.; // Minimum is 20
 
-	Emu.BlockingCallFromMainThread([this, &rate]()
+	Emu.BlockingCallFromMainThread([&rate]()
 	{
 		const QList<QScreen*> screens = QGuiApplication::screens();
 

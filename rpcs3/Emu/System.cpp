@@ -2837,7 +2837,7 @@ bool Emulator::Pause(bool freeze_emulation, bool show_resume_message)
 		auto msg_ref = std::make_shared<atomic_t<u32>>(1);
 
 		// No timeout
-		rsx::overlays::queue_message(status == system_state::paused ? localized_string_id::EMULATION_PAUSED_RESUME_WITH_START : localized_string_id::EMULATION_FROZEN, -1, msg_ref);
+		rsx::overlays::queue_message(status == system_state::paused ? localized_string_id::EMULATION_PAUSED_RESUME_WITH_START : localized_string_id::EMULATION_FROZEN, umax, msg_ref);
 		m_pause_msgs_refs.emplace_back(msg_ref);
 
 		auto refresh_l = [this, msg_ref, status]()
@@ -3160,7 +3160,11 @@ void Emulator::GracefulShutdown(bool allow_autoexit, bool async_op, bool savesta
 
 	if (async_op)
 	{
-		std::thread{perform_kill}.detach();
+		std::thread{[perform_kill]()
+		{
+			thread_base::set_name("Perform Kill");
+			perform_kill();
+		}}.detach();
 	}
 	else
 	{
@@ -3996,7 +4000,7 @@ void Emulator::Kill(bool allow_autoexit, bool savestate, savestate_stage* save_s
 	}));
 }
 
-game_boot_result Emulator::Restart(bool graceful)
+game_boot_result Emulator::Restart(bool graceful, bool reset_path)
 {
 	if (m_state == system_state::stopping)
 	{
@@ -4004,7 +4008,7 @@ game_boot_result Emulator::Restart(bool graceful)
 		return game_boot_result::still_running;
 	}
 
-	Emu.after_kill_callback = [this]
+	Emu.after_kill_callback = [this, reset_path]
 	{
 		// Reset boot path in case of ISO
 		if (m_path.starts_with(iso_device::virtual_device_name))
@@ -4016,7 +4020,7 @@ game_boot_result Emulator::Restart(bool graceful)
 		}
 
 		// If continuous mode changed the path, restart from the original executable
-		if (!m_path_original.empty() && m_path_original != m_path)
+		if (reset_path && !m_path_original.empty() && m_path_original != m_path)
 		{
 			sys_log.notice("Restart: Resetting boot path from '%s' to original '%s'", m_path, m_path_original);
 			m_path = m_path_original;
