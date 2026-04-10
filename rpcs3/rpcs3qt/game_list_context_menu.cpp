@@ -14,6 +14,7 @@
 
 #include "Utilities/File.h"
 #include "Emu/system_utils.hpp"
+#include "Loader/ISO.h"
 
 #include "QApplication"
 #include "QClipboard"
@@ -575,6 +576,17 @@ void game_list_context_menu::show_single_selection_context_menu(const game_info&
 	QAction* copy_serial = info_menu->addAction(tr("&Copy Serial"));
 
 	addSeparator();
+
+	// Check integrity
+	if (QString::fromStdString(current_game.category) == cat::cat_disc_game &&
+		iso_file_decryption::check_type(current_game.path) == iso_type_status::REDUMP)
+	{
+		QAction* check_integrity = addAction(tr("&Check ISO Integrity"));
+		connect(check_integrity, &QAction::triggered, this, [this, gameinfo]()
+		{
+			m_game_list_actions->ShowGameIntegrityDialog({gameinfo});
+		});
+	}
 
 	QAction* check_compat = addAction(tr("&Check Game Compatibility"));
 	QAction* download_compat = addAction(tr("&Download Compatibility Database"));

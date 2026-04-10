@@ -241,6 +241,16 @@ namespace rpcs3::utils
 		return cache_dir;
 	}
 
+	std::string get_iso_dir()
+	{
+		return fs::get_config_dir()/* + "iso/"*/; // TO BE FINALIZED WITH A PROPER FOLDER!
+	}
+
+	std::string get_iso_db_path()
+	{
+		return get_iso_dir() + "redump.dat";
+	}
+
 	std::string get_data_dir()
 	{
 		return fs::get_config_dir() + "data/";

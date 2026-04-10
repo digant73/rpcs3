@@ -364,6 +364,49 @@ void game_list_actions::ShowGameInfoDialog(const std::vector<game_info>& games)
 	QMessageBox::information(m_game_list_frame, tr("Game Info"), GetContentInfo(games).info);
 }
 
+void game_list_actions::ShowGameIntegrityDialog(const game_info& game)
+{
+	if (m_game_integrity_future.isRunning()) // Still running the last request
+		return;
+
+	// Game integrity verification can take a while (in particular on non ssd/m.2 disks)
+	// so run it on a concurrent thread avoiding to block the entire GUI
+	m_game_integrity_future = QtConcurrent::run([this, path = game->info.path]()
+	{/*
+		const std::vector<std::pair<std::string, u64>> vfs_disk_usage = rpcs3::utils::get_vfs_disk_usage();
+		const u64 cache_disk_usage = rpcs3::utils::get_cache_disk_usage();
+
+		QString text;
+		u64 tot_data_size = 0;
+
+		for (const auto& [dev, data_size] : vfs_disk_usage)
+		{
+			text += tr("\n    %0: %1").arg(QString::fromStdString(dev)).arg(gui::utils::format_byte_size(data_size));
+			tot_data_size += data_size;
+		}
+
+		if (!text.isEmpty())
+			text = tr("\n  VFS disk usage: %0%1").arg(gui::utils::format_byte_size(tot_data_size)).arg(text);
+
+		text += tr("\n  Cache disk usage: %0").arg(gui::utils::format_byte_size(cache_disk_usage));
+		*/
+
+		QString text = "KO";
+
+		if (iso_file_decryption::check_integrity(path) == iso_integrity_status::VALID)
+		{
+			text = "OK";
+		}
+
+		sys_log.success("%s", text);
+
+		Emu.CallFromMainThread([this, text]()
+		{
+			QMessageBox::information(m_game_list_frame, tr("Game Integrity"), text);
+		}, nullptr, false);
+	});
+}
+
 void game_list_actions::ShowDiskUsageDialog()
 {
 	if (m_disk_usage_future.isRunning()) // Still running the last request
