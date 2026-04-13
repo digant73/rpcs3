@@ -2,10 +2,8 @@
 
 #include "ISO.h"
 #include "Emu/VFS.h"
-#include "EMU/system_utils.hpp"
+#include "Emu/system_utils.hpp"
 #include "Crypto/utils.h"
-#include "Crypto/md5.h"
-#include "Utilities/rXml.h"
 
 #include <codecvt>
 #include <algorithm>
@@ -14,8 +12,6 @@
 #include <stack>
 
 LOG_CHANNEL(sys_log, "SYS");
-
-constexpr u64 ISO_SECTOR_SIZE = 2048;
 
 struct iso_sector
 {
@@ -160,33 +156,51 @@ void iso_file_decryption::reset()
 	m_region_info.clear();
 }
 
-iso_type_status iso_file_decryption::check_type(const std::string& path, std::array<u8, 16>* dec_key)
+iso_type_status iso_file_decryption::check_type(const std::string& path, std::string& key_path, aes_context* aes_ctx)
 {
 	if (!is_file_iso(path))
 	{
-		return iso_type_status::ERROR_OPENING;
+		return iso_type_status::NOT_ISO;
 	}
 
+	// Remove file extension from file path
 	const usz ext_pos = path.rfind('.');
-	std::string key_path;
+	std::string name_path = ext_pos == umax ? path : path.substr(0, ext_pos);
 
-	// If no file extension is provided, set "key_path" appending ".dkey" to "path".
-	// Otherwise, replace the extension (e.g. ".iso") with ".dkey"
-	key_path = ext_pos == umax ? path + ".dkey" : path.substr(0, ext_pos) + ".dkey";
+	// Detect file name (with no parent folder and no file extension)
+	const usz name_pos = name_path.rfind('/');
+	std::string name = name_pos == umax ? name_path : name_path.substr(name_pos);
+
+	// Open ".dkey" file
+	key_path = name_path + ".dkey";
 
 	fs::file key_file(key_path);
 
 	// If no ".dkey" file exists, try with ".key"
 	if (!key_file)
 	{
-		key_path = ext_pos == umax ? path + ".key" : path.substr(0, ext_pos) + ".key";
+		key_path = name_path + ".key";
+		key_file = fs::file(key_path);
+	}
+
+	// If no ".dkey" and ".key" file exists, try on default ISO keys folder
+	if (!key_file)
+	{
+		key_path = rpcs3::utils::get_redump_dir() + name + ".dkey";
+		key_file = fs::file(key_path);
+	}
+
+	// If no ".dkey" file exists, try with ".key"
+	if (!key_file)
+	{
+		key_path = rpcs3::utils::get_redump_dir() + name + ".key";
 		key_file = fs::file(key_path);
 	}
 
 	// If no ".dkey" and ".key" file exists
 	if (!key_file)
 	{
-		return iso_type_status::ERROR_OPENING;
+		return iso_type_status::ERROR_OPENING_KEY;
 	}
 
 	char key_str[32];
@@ -209,133 +223,20 @@ iso_type_status iso_file_decryption::check_type(const std::string& path, std::ar
 
 		aes_context aes_dec;
 
-		// Create the "aes_dec" context. If the context is successfully created, return Redump status
-		if (aes_setkey_dec(&aes_dec, key.data(), 128) == 0)
+		if (!aes_ctx)
 		{
-			if (dec_key != nullptr)
-			{
-				*dec_key = key;
-			}
+			aes_ctx = &aes_dec;
+		}
 
-			std::string test;
-			bytes_to_hex(test, key.data(), sizeof(key));
-			sys_log.error("check_type(): %s", test);
-
-			return iso_type_status::REDUMP;
+		// Create the decryption context. If the context is successfully created, fill in "aes_ctx"
+		// (if not passed as nullptr) and return Redump ISO status
+		if (aes_setkey_dec(aes_ctx, key.data(), 128) == 0)
+		{
+			return iso_type_status::REDUMP_ISO;
 		}
 	}
 
-	return iso_type_status::ERROR_PROCESSING;
-}
-
-iso_integrity_status iso_file_decryption::check_integrity(const std::string& path)
-{
-	//
-	// Check Redump db
-	//
-
-	const usz ext_pos = path.rfind('.');
-	std::string db_path;
-
-	// If no file extension is provided, set "db_path" appending ".dat" to "path".
-	// Otherwise, replace the extension (e.g. ".iso") with ".dat"
-	db_path = ext_pos == umax ? path + ".dat" : path.substr(0, ext_pos) + ".dat";
-
-	fs::file db_file(db_path);
-
-	// If no ".dat" file exists, try with default "redump.dat" file
-	if (!db_file)
-	{
-		db_file = fs::file(rpcs3::utils::get_iso_db_path());
-	}
-
-	// If no db file exists
-	if (!db_file)
-	{
-		sys_log.error("check_integrity(): Failed to open file: %s", db_path);
-		return iso_integrity_status::ERROR_OPENING_DB;
-	}
-
-	rXmlDocument db;
-
-	if (!db.Read(db_file.to_string()))
-	{
-		sys_log.error("check_integrity(): Failed to process file: %s", db_path);
-		return iso_integrity_status::ERROR_PROCESSING_DB;
-	}
-
-	std::shared_ptr<rXmlNode> db_base = db.GetRoot();
-
-	if (!db_base)
-	{
-		sys_log.error("check_integrity(): Failed to get 'root' node on file: %s", db_path);
-		return iso_integrity_status::ERROR_PROCESSING_DB;
-	}
-
-	if (const auto& node = db_base->GetChildren(); node && node->GetName() == "datafile")
-	{
-		db_base = node;
-	}
-	else
-	{
-		sys_log.error("check_integrity(): Failed to get 'datafile' node on file: %s", db_path);
-		return iso_integrity_status::ERROR_PROCESSING_DB;
-	}
-
-	//
-	// Calculate MD5 hash on ISO file
-	//
-
-	fs::file iso_file(path);
-
-	// If no ISO file exists
-	if (!iso_file)
-	{
-		sys_log.error("check_integrity(): Failed to open file: %s", path);
-		return iso_integrity_status::ERROR_OPENING_ISO;
-	}
-
-	std::array<u8, ISO_SECTOR_SIZE> buf;
-	u64 bytes_read;
-	mbedtls_md5_context md5_ctx;
-	unsigned char hash[16];
-	std::string hash_str;
-
-	mbedtls_md5_starts_ret(&md5_ctx);
-
-	do
-	{
-		bytes_read = iso_file.read(buf.data(), ISO_SECTOR_SIZE);
-		mbedtls_md5_update_ret(&md5_ctx, buf.data(), bytes_read);
-	}
-	while (bytes_read == ISO_SECTOR_SIZE);
-
-	mbedtls_md5_finish_ret(&md5_ctx, hash);
-
-	bytes_to_hex(hash_str, hash, 16);
-
-	//
-	// Check for a matching on Redump db
-	//
-
-	for (auto node = db_base->GetChildren(); node; node = node->GetNext())
-	{
-		if (node->GetName() == "game")
-		{
-			for (auto child = node->GetChildren(); child; child = child->GetNext())
-			{
-				if (child->GetName() == "rom")
-				{
-					if (hash_str == child->GetAttribute(std::string_view("md5")))
-					{
-						return iso_integrity_status::VALID;
-					}
-				}
-			}
-		}
-	}
-
-	return iso_integrity_status::NO_MATCHING;
+	return iso_type_status::ERROR_PROCESSING_KEY;
 }
 
 bool iso_file_decryption::init(const std::string& path)
@@ -402,57 +303,25 @@ bool iso_file_decryption::init(const std::string& path)
 	// Check for Redump type
 	//
 
-	const usz ext_pos = path.rfind('.');
 	std::string key_path;
 
-	// If no file extension is provided, set "key_path" appending ".dkey" to "path".
-	// Otherwise, replace the extension (e.g. ".iso") with ".dkey"
-	key_path = ext_pos == umax ? path + ".dkey" : path.substr(0, ext_pos) + ".dkey";
-
-	fs::file key_file(key_path);
-
-	// If no ".dkey" file exists, try with ".key"
-	if (!key_file)
+	// Try to detect the Redump type. If so, the decryption context is set into "m_aes_dec"
+	switch (check_type(path, key_path, &m_aes_dec))
 	{
-		key_path = ext_pos == umax ? path + ".key" : path.substr(0, ext_pos) + ".key";
-		key_file = fs::file(key_path);
-	}
-
-	// Check if "key_path" exists and create the "m_aes_dec" context if so
-	if (key_file)
-	{
-		char key_str[32];
-		unsigned char key[16];
-
-		const u64 key_len = key_file.read(key_str, sizeof(key_str));
-
-		if (key_len == sizeof(key_str) || key_len == sizeof(key))
-		{
-			// If the key read from the key file is 16 bytes long instead of 32, consider the file as
-			// binary (".key") and so not needing any further conversion from hex string to bytes
-			if (key_len == sizeof(key))
-			{
-				memcpy(key, key_str, sizeof(key));
-			}
-			else
-			{
-				hex_to_bytes(key, std::string_view(key_str, key_len), static_cast<unsigned int>(key_len));
-			}
-
-			if (aes_setkey_dec(&m_aes_dec, key, 128) == 0)
-			{
-				m_enc_type = iso_encryption_type::REDUMP; // SET ENCRYPTION TYPE: REDUMP
-			}
-		}
-
-		if (m_enc_type == iso_encryption_type::NONE) // If encryption type was not set to REDUMP for any reason
-		{
-			sys_log.error("init(): Failed to process key file: %s", key_path);
-		}
-	}
-	else
-	{
+	case iso_type_status::NOT_ISO:
+		sys_log.warning("init(): Failed to recognize ISO file: %s", path);
+		break;
+	case iso_type_status::REDUMP_ISO:
+		m_enc_type = iso_encryption_type::REDUMP; // SET ENCRYPTION TYPE: REDUMP
+		break;
+	case iso_type_status::ERROR_OPENING_KEY:
 		sys_log.warning("init(): Failed to open, or missing, key file: %s", key_path);
+		break;
+	case iso_type_status::ERROR_PROCESSING_KEY:
+		sys_log.error("init(): Failed to process key file: %s", key_path);
+		break;
+	default:
+		break;
 	}
 
 	//
@@ -1326,10 +1195,8 @@ std::unique_ptr<fs::dir_base> iso_device::open_dir(const std::string& path)
 
 	if (!node->metadata.is_directory)
 	{
-		// fs::dir::open -> ::readdir should return ENOTDIR when path is
-		// pointing to a file instead of a folder, which translates to error::unknown.
-		// doing the same here.
-		fs::g_tls_error = fs::error::unknown;
+		// fs::dir::open -> ::readdir should return ENOTDIR when path is pointing to a file instead of a folder.
+		fs::g_tls_error = fs::error::notdir;
 		return nullptr;
 	}
 

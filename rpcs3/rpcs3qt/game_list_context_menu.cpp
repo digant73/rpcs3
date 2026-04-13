@@ -578,14 +578,38 @@ void game_list_context_menu::show_single_selection_context_menu(const game_info&
 	addSeparator();
 
 	// Check integrity
-	if (QString::fromStdString(current_game.category) == cat::cat_disc_game &&
-		iso_file_decryption::check_type(current_game.path) == iso_type_status::REDUMP)
+	if (QString::fromStdString(current_game.category) == cat::cat_disc_game)
 	{
-		QAction* check_integrity = addAction(tr("&Check ISO Integrity"));
-		connect(check_integrity, &QAction::triggered, this, [this, gameinfo]()
+		std::string key_path;
+		const iso_type_status iso_type = iso_file_decryption::check_type(current_game.path, key_path);
+		const iso_integrity_status iso_db = iso_file_validation::check_integrity(current_game.path, "");
+
+		// If it's an ISO file (e.g. even a decrypted ISO), always provide the entry on the context menu but disable
+		// it if the ISO does not support integrity check (e.g. non Redump ISO) or no integrity DB is found.
+		// That is to highlight a Redump ISO from a non Redump ISO
+		if (iso_type != iso_type_status::NOT_ISO)
 		{
-			m_game_list_actions->ShowGameIntegrityDialog({gameinfo});
-		});
+			QAction* check_integrity = addAction(tr("&Check ISO Integrity"));
+
+			// If it's a Redump ISO and the integrity DB exists
+			if (iso_type == iso_type_status::REDUMP_ISO && iso_db != iso_integrity_status::ERROR_OPENING_DB)
+			{
+				connect(check_integrity, &QAction::triggered, this, [this, gameinfo]()
+				{
+					m_game_list_actions->ShowGameIntegrityDialog(gameinfo);
+				});
+			}
+			else
+			{
+				check_integrity->setEnabled(false);
+			}
+
+			QAction* download_integrity = addAction(tr("&Download Integrity Database"));
+			connect(download_integrity, &QAction::triggered, m_game_list_frame, [this]
+			{
+				ensure(m_game_list_frame->GetIsoIntegrity())->download();
+			});
+		}
 	}
 
 	QAction* check_compat = addAction(tr("&Check Game Compatibility"));

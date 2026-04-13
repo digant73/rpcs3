@@ -15,6 +15,8 @@
 
 #include "Input/pad_thread.h"
 
+#include <thread>
+
 #include <QApplication>
 #include <QCheckBox>
 #include <QtConcurrent>
@@ -369,41 +371,87 @@ void game_list_actions::ShowGameIntegrityDialog(const game_info& game)
 	if (m_game_integrity_future.isRunning()) // Still running the last request
 		return;
 
-	// Game integrity verification can take a while (in particular on non ssd/m.2 disks)
+	progress_dialog* pdlg = new progress_dialog(tr("ISO File Hash Calculation"), tr("Calculating hash"), tr("Cancel"),
+		0, 100, true, m_game_list_frame);
+
+	pdlg->setAutoClose(false);
+	pdlg->setAutoReset(false);
+	pdlg->open();
+
+	connect(pdlg, &progress_dialog::canceled, m_game_list_frame, [this]()
+	{
+		m_iso_validator->abort_hash();
+	});
+
+	// Initialize the validator (set also file size etc.)
+	m_iso_validator->init_hash(game->info.path);
+
+	// Game integrity check can take a while (in particular on non ssd/m.2 disks)
 	// so run it on a concurrent thread avoiding to block the entire GUI
-	m_game_integrity_future = QtConcurrent::run([this, path = game->info.path]()
-	{/*
-		const std::vector<std::pair<std::string, u64>> vfs_disk_usage = rpcs3::utils::get_vfs_disk_usage();
-		const u64 cache_disk_usage = rpcs3::utils::get_cache_disk_usage();
-
+	m_game_integrity_future = QtConcurrent::run([this]()
+	{
 		QString text;
-		u64 tot_data_size = 0;
+		std::string hash, game_name;
+		bool info_dialog = false;
 
-		for (const auto& [dev, data_size] : vfs_disk_usage)
+		if (m_iso_validator->calculate_hash(hash) != iso_hash_status::COMPLETED)
 		{
-			text += tr("\n    %0: %1").arg(QString::fromStdString(dev)).arg(gui::utils::format_byte_size(data_size));
-			tot_data_size += data_size;
+			text = "Hash calculation failed!\n\nIntegrity check aborted";
+		}
+		else
+		{
+			text = "Integrity check completed!\n\n";
+
+			switch (m_iso_validator->check_integrity(m_iso_validator->get_path(), hash, &game_name))
+			{
+			case iso_integrity_status::NO_MATCH:
+				text += tr("Game check NOT PASSED\n\nNo match found on DB or game corrupted:\n - Hash: %0")
+					.arg(QString::fromStdString(hash));
+				break;
+			case iso_integrity_status::FOUND_MATCH:
+				text += tr("Game check PASSED\n\nMatch found on DB:\n - Game: %0\n - Hash: %1")
+					.arg(QString::fromStdString(game_name))
+					.arg(QString::fromStdString(hash));
+
+				info_dialog = true;
+				break;
+			default:
+				text += tr("Error parsing DB");
+				break;
+			}
 		}
 
-		if (!text.isEmpty())
-			text = tr("\n  VFS disk usage: %0%1").arg(gui::utils::format_byte_size(tot_data_size)).arg(text);
-
-		text += tr("\n  Cache disk usage: %0").arg(gui::utils::format_byte_size(cache_disk_usage));
-		*/
-
-		QString text = "KO";
-
-		if (iso_file_decryption::check_integrity(path) == iso_integrity_status::VALID)
+		Emu.CallFromMainThread([this, text, info_dialog]()
 		{
-			text = "OK";
-		}
-
-		sys_log.success("%s", text);
-
-		Emu.CallFromMainThread([this, text]()
-		{
-			QMessageBox::information(m_game_list_frame, tr("Game Integrity"), text);
+			if (info_dialog)
+			{
+				sys_log.success("%s", text.toStdString());
+				QMessageBox::information(m_game_list_frame, tr("Game Integrity"), text);
+			}
+			else
+			{
+				sys_log.error("%s", text.toStdString());
+				QMessageBox::critical(m_game_list_frame, tr("Game Integrity"), text);
+			}
 		}, nullptr, false);
+	});
+
+	// Thread responsible to update the progress bar and to make cleanup when the hash calculation terminates
+	QtConcurrent::run([this, pdlg]()
+	{
+		while (m_iso_validator->get_status() == iso_hash_status::INITIALIZED)
+		{
+			// Set progress in range 0-100
+			const int progress = m_iso_validator->get_size() ?
+				(static_cast<float>(m_iso_validator->get_bytes_read()) / m_iso_validator->get_size()) * 100 :
+				0;
+
+			pdlg->setValue(progress);
+			std::this_thread::sleep_for(1000ms); // Wait for a little while
+		}
+
+		// As last, close the progress bar (object was also configured to be automatically deleted on close)
+		pdlg->close();
 	});
 }
 
