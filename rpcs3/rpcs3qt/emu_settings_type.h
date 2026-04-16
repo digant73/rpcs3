@@ -184,6 +184,7 @@ enum class emu_settings_type
 	ShowTrophyPopups,
 	ShowRpcnPopups,
 	UseNativeInterface,
+	UseRecursiveScan,
 	ShowShaderCompilationHint,
 	ShowPPUCompilationHint,
 	ShowAutosaveAutoloadHint,
@@ -403,6 +404,7 @@ inline static const std::map<emu_settings_type, cfg_location> settings_location 
 	{ emu_settings_type::ShowTrophyPopups,                { "Miscellaneous", "Show trophy popups"}},
 	{ emu_settings_type::ShowRpcnPopups,                  { "Miscellaneous", "Show RPCN popups"}},
 	{ emu_settings_type::UseNativeInterface,              { "Miscellaneous", "Use native user interface"}},
+	{ emu_settings_type::UseRecursiveScan,                { "Miscellaneous", "Use recursive scan"}},
 	{ emu_settings_type::ShowShaderCompilationHint,       { "Miscellaneous", "Show shader compilation hint"}},
 	{ emu_settings_type::ShowPPUCompilationHint,          { "Miscellaneous", "Show PPU compilation hint"}},
 	{ emu_settings_type::ShowAutosaveAutoloadHint,        { "Miscellaneous", "Show autosave/autoload hint"}},
@@ -425,7 +427,7 @@ inline static const std::map<emu_settings_type, cfg_location> settings_location 
 	{ emu_settings_type::BindAddress,    { "Net", "Bind address"}},
 	{ emu_settings_type::EnableUpnp,     { "Net", "UPNP Enabled"}},
 	{ emu_settings_type::PSNCountry,     { "Net", "PSN Country"}},
-	{ emu_settings_type::EnableClans,     { "Net", "Clans Enabled"}},
+	{ emu_settings_type::EnableClans,    { "Net", "Clans Enabled"}},
 
 	// System
 	{ emu_settings_type::LicenseArea,           { "System", "License Area"}},

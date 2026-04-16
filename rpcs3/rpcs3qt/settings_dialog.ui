@@ -3012,7 +3012,14 @@
                  </property>
                 </widget>
                </item>
-              </layout>
+               <item>
+                <widget class="QCheckBox" name="useRecursiveScan">
+                 <property name="text">
+                  <string>Use recursive scan</string>
+                 </property>
+                </widget>
+               </item>
+			  </layout>
              </widget>
             </item>
             <item>
