@@ -10,6 +10,7 @@
 #include "game_list_table.h"
 #include "game_list_grid.h"
 #include "game_list_grid_item.h"
+#include "config_database.h"
 
 #include "Emu/System.h"
 #include "Emu/vfs_config.h"
@@ -75,6 +76,7 @@ game_list_frame::game_list_frame(std::shared_ptr<gui_settings> gui_settings, std
 
 	m_iso_integrity = new iso_integrity(this);
 	m_game_compat = new game_compatibility(m_gui_settings, this);
+	m_config_db = new config_database(m_gui_settings, this);
 
 	m_central_widget = new QStackedWidget(this);
 	m_central_widget->addWidget(m_game_list);
@@ -199,6 +201,22 @@ game_list_frame::game_list_frame(std::shared_ptr<gui_settings> gui_settings, std
 	{
 		OnCompatFinished();
 		QMessageBox::warning(this, tr("Warning!"), tr("Failed to retrieve the online compatibility database!\nFalling back to local database.\n\n%0").arg(error));
+	});
+
+	connect(m_config_db, &config_database::download_started, this, [this]()
+	{
+		for (const auto& game : m_game_data)
+		{
+			game->has_database_config = false;
+		}
+		Refresh();
+	});
+	connect(m_config_db, &config_database::download_finished, this, &game_list_frame::OnConfigDatabaseFinished);
+	connect(m_config_db, &config_database::download_canceled, this, &game_list_frame::OnConfigDatabaseFinished);
+	connect(m_config_db, &config_database::download_error, this, [this](const QString& error)
+	{
+		OnConfigDatabaseFinished();
+		QMessageBox::warning(this, tr("Warning!"), tr("Failed to retrieve the online config database!\nFalling back to local database.\n\n%0").arg(error));
 	});
 
 	connect(m_game_list, &game_list::FocusToSearchBar, this, &game_list_frame::FocusToSearchBar);
@@ -802,6 +820,7 @@ void game_list_frame::OnParsingFinished()
 
 		game.localized_category = std::move(qt_cat);
 		game.compat = m_game_compat->GetCompatibility(game.info.serial);
+		game.has_database_config = m_config_db->has_config(game.info.serial);
 		game.has_custom_config = fs::is_file(rpcs3::utils::get_custom_config_path(game.info.serial));
 		game.has_custom_pad_config = fs::is_file(rpcs3::utils::get_custom_input_config_path(game.info.serial));
 
@@ -1021,6 +1040,15 @@ void game_list_frame::OnCompatFinished()
 	for (const auto& game : m_game_data)
 	{
 		game->compat = m_game_compat->GetCompatibility(game->info.serial);
+	}
+	Refresh();
+}
+
+void game_list_frame::OnConfigDatabaseFinished()
+{
+	for (const auto& game : m_game_data)
+	{
+		game->has_database_config = m_config_db->has_config(game->info.serial);
 	}
 	Refresh();
 }
