@@ -4196,13 +4196,13 @@ u32 Emulator::AddGamesFromDir(const std::string& path)
 
 	m_games_config.set_save_on_dirty(false);
 
-	// search for a game on provided path first (game on ISO file or on folder type)
+	// search for a game on the provided path first (game on ISO file or on folder type)
 	if (const game_boot_result error = AddGame(path); error == game_boot_result::no_errors)
 	{
 		games_added++;
 	}
 
-	// search for games on subfolders only if not nested on a discovered game folder
+	// search for games on subfolders only if not nested inside a discovered game folder
 	if (games_added == 0)
 	{
 		std::vector<fs::dir_entry> entries;
