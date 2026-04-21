@@ -1202,7 +1202,6 @@ game_boot_result Emulator::Load(const std::string& title_id, bool is_disc_patch,
 			m_ar->serialize(argv.emplace_back(), disc_info, klic.emplace_back(), m_game_dir, hdd1);
 
 			launching_from_disc_archive = is_file_iso(disc_info);
-			sys_log.error("STARTED GAME %s", disc_info);
 
 			sys_log.notice("Savestate: is iso archive = %d ('%s')", launching_from_disc_archive, disc_info);
 
@@ -1481,10 +1480,7 @@ game_boot_result Emulator::Load(const std::string& title_id, bool is_disc_patch,
 		}
 
 		const std::string resolved_path = GetCallbacks().resolve_path(m_path);
-		//std::string raw_device_path;
-		const bool is_raw_device = fs::get_optical_raw_device(m_path, /*raw_device_path*/ m_path);
-
-		if (!launching_from_disc_archive && (is_file_iso(m_path) || is_raw_device))
+		if (!launching_from_disc_archive && is_file_iso(m_path))
 		{
 			sys_log.notice("Loading iso archive '%s'", m_path);
 
@@ -4217,62 +4213,54 @@ u32 Emulator::AddGamesFromDir(const std::string& path)
 
 	m_games_config.set_save_on_dirty(false);
 
-	// search for a game on the provided path first (game on ISO file or on folder type)
+	// search dropped path first or else the direct parent to an elf is wrongly skipped
 	if (const game_boot_result error = AddGame(path); error == game_boot_result::no_errors)
 	{
 		games_added++;
 	}
 
-	// search for games on subfolders only if not nested inside a discovered game folder
-	if (games_added == 0)
+	std::vector<fs::dir_entry> entries;
+
+	for (auto&& dir_entry : fs::dir(path))
 	{
-		std::vector<fs::dir_entry> entries;
+		// Prefetch entries, it is unsafe to keep fs::dir for a long time or for many operations
+		entries.emplace_back(std::move(dir_entry));
+	}
 
-		for (auto&& dir_entry : fs::dir(path))
+	auto path_it = entries.begin();
+
+	qt_events_aware_op(0, [&]()
+	{
+		// search direct subdirectories, that way we can drop one folder containing all games
+		for (; path_it != entries.end(); ++path_it)
 		{
-			// Prefetch entries, it is unsafe to keep fs::dir for a long time or for many operations
-			entries.emplace_back(std::move(dir_entry));
-		}
+			auto dir_entry = std::move(*path_it);
 
-		auto path_it = entries.begin();
-
-		qt_events_aware_op(0, [&]()
-		{
-			// search direct subdirectories, that way we can drop one folder containing all games
-			for (; path_it != entries.end(); ++path_it)
+			if (dir_entry.name == "." || dir_entry.name == "..")
 			{
-				auto dir_entry = std::move(*path_it);
-
-				if (dir_entry.name == "." || dir_entry.name == "..")
-				{
-					continue;
-				}
-
-				const std::string dir_path = path + '/' + dir_entry.name;
-
-				if (!dir_entry.is_directory && !is_file_iso(dir_path))
-				{
-					continue;
-				}
-
-				if (const game_boot_result error = AddGame(dir_path); error == game_boot_result::no_errors)
-				{
-					games_added++;
-				}
-				else if (g_cfg.misc.use_recursive_scan)
-				{
-					games_added += AddGamesFromDir(dir_path);
-				}
-
-				// Process events
-				++path_it;
-				return false;
+				continue;
 			}
 
-			// Exit loop
-			return true;
-		});
-	}
+			const std::string dir_path = path + '/' + dir_entry.name;
+
+			if (!dir_entry.is_directory && !is_file_iso(dir_path))
+			{
+				continue;
+			}
+
+			if (const game_boot_result error = AddGame(dir_path); error == game_boot_result::no_errors)
+			{
+				games_added++;
+			}
+
+			// Process events
+			++path_it;
+			return false;
+		}
+
+		// Exit loop
+		return true;
+	});
 
 	m_games_config.set_save_on_dirty(true);
 
