@@ -166,36 +166,29 @@ iso_type_status iso_file_decryption::check_type(const std::string& path, std::st
 
 	// Remove file extension from file path
 	const usz ext_pos = path.rfind('.');
-	std::string name_path = ext_pos == umax ? path : path.substr(0, ext_pos);
+	const std::string name_path = ext_pos == umax ? path : path.substr(0, ext_pos);
 
 	// Detect file name (with no parent folder and no file extension)
 	const usz name_pos = name_path.rfind('/');
-	std::string name = name_pos == umax ? name_path : name_path.substr(name_pos);
+	const std::string name = name_pos == umax ? name_path : name_path.substr(name_pos);
+	fs::file key_file;
 
-	// Open ".dkey" file
-	key_path = name_path + ".dkey";
+	const std::array<std::string, 4> key_paths {
+		name_path + ".dkey",
+		name_path + ".key",
+		rpcs3::utils::get_redump_key_dir() + name + ".dkey",
+		rpcs3::utils::get_redump_key_dir() + name + ".key"
+	};
 
-	fs::file key_file(key_path);
-
-	// If no ".dkey" file exists, try with ".key"
-	if (!key_file)
+	for (const std::string& path : key_paths)
 	{
-		key_path = name_path + ".key";
-		key_file = fs::file(key_path);
-	}
+		key_file = fs::file(path);
 
-	// If no ".dkey" and ".key" file exists, try on default ISO keys folder
-	if (!key_file)
-	{
-		key_path = rpcs3::utils::get_redump_key_dir() + name + ".dkey";
-		key_file = fs::file(key_path);
-	}
-
-	// If no ".dkey" file exists, try with ".key"
-	if (!key_file)
-	{
-		key_path = rpcs3::utils::get_redump_key_dir() + name + ".key";
-		key_file = fs::file(key_path);
+		if (key_file)
+		{
+			key_path = path;
+			break;
+		}
 	}
 
 	// If no ".dkey" and ".key" file exists
@@ -245,32 +238,36 @@ bool iso_file_decryption::init(const std::string& path)
 {
 	reset();
 
-	if (!is_file_iso(path))
-	{
-		return false;
-	}
-
 	//
 	// Store the ISO region information (needed by both the "Redump" type (only on "decrypt()" method) and "3k3y" type)
 	//
 
-	fs::file iso_file(path);
+	m_file = fs::file(std::make_unique<iso_file>(path));
 
-	if (!iso_file)
+	if (!m_file)
 	{
 		iso_log.error("init: Failed to open file: %s", path);
 		return false;
 	}
 
-	std::array<u8, ISO_SECTOR_SIZE * 2> sec0_sec1 {};
-
-	if (iso_file.size() < sec0_sec1.size())
+	if (!is_file_iso(m_file))
 	{
-		iso_log.error("init: Found only %ull sector(s) (minimum required is 2): %s", iso_file.size(), path);
+		iso_log.error("init: Failed to recognize ISO file: %s", path);
 		return false;
 	}
 
-	if (iso_file.read(sec0_sec1.data(), sec0_sec1.size()) != sec0_sec1.size())
+	// Reset the file position after it was changed by is_file_iso()
+	m_file.seek(0);
+
+	std::array<u8, ISO_SECTOR_SIZE * 2> sec0_sec1 {};
+
+	if (m_file.size() < sec0_sec1.size())
+	{
+		iso_log.error("init: Found only %ull sector(s) (minimum required is 2): %s", m_file.size(), path);
+		return false;
+	}
+
+	if (m_file.read(sec0_sec1.data(), sec0_sec1.size()) != sec0_sec1.size())
 	{
 		iso_log.error("init: Failed to read file: %s", path);
 		return false;
@@ -284,7 +281,7 @@ bool iso_file_decryption::init(const std::string& path)
 	const u32 region_count = char_arr_BE_to_uint(sec0_sec1.data());
 
 	// Ensure the region count is a proper value
-	if (region_count < 1 || region_count > 31) // It's non-PS3ISO
+	if (region_count < 1 || region_count > 127) // It's non-PS3ISO
 	{
 		iso_log.error("init: Failed to read region information: '%s' (region_count=%d)", path, region_count);
 		return false;
@@ -669,10 +666,20 @@ u64 iso_fs_metadata::size() const
 	return total_size;
 }
 
+iso_file iso_archive::get_iso_file(std::string& path, const iso_fs_node& node)
+{
+	if (m_dec->get_enc_type() != iso_encryption_type::NONE)
+	{
+		return iso_file(m_path, m_dec, node);
+	}
+	
+	return iso_file(m_path, m_dec, node);
+}
+
 iso_archive::iso_archive(const std::string& path)
 {
 	m_path = path;
-	m_file = fs::file(path);
+	m_file = fs::file(std::make_unique<iso_file>(path));
 	m_dec = std::make_shared<iso_file_decryption>();
 
 	if (!m_dec->init(path))
@@ -714,6 +721,8 @@ iso_archive::iso_archive(const std::string& path)
 	while (descriptor_type != 255);
 
 	iso_form_hierarchy(m_file, m_root, use_ucs2_decoding);
+
+	iso_log.error("FOUND '%d' '%d'", m_root.children.size(), m_root.metadata.extents.size());
 }
 
 iso_fs_node* iso_archive::retrieve(const std::string& passed_path)
@@ -812,7 +821,7 @@ bool iso_archive::is_file(const std::string& path)
 
 iso_file iso_archive::open(const std::string& path)
 {
-	return iso_file(fs::file(m_path), m_dec, *ensure(retrieve(path)));
+	return get_iso_file(m_path, *ensure(retrieve(path)));
 }
 
 psf::registry iso_archive::open_psf(const std::string& path)
@@ -824,15 +833,37 @@ psf::registry iso_archive::open_psf(const std::string& path)
 		return psf::registry();
 	}
 
-	const fs::file psf_file(std::make_unique<iso_file>(fs::file(m_path), m_dec, *archive_file));
+	const fs::file psf_file(std::make_unique<iso_file>(get_iso_file(m_path, *archive_file)));
 
 	return psf::load_object(psf_file, path);
 }
 
-iso_file::iso_file(fs::file&& iso_handle, std::shared_ptr<iso_file_decryption> iso_dec, const iso_fs_node& node)
-	: m_file(std::move(iso_handle)), m_dec(iso_dec), m_meta(node.metadata)
+iso_file::iso_file(const std::string& path)
 {
-	m_file.seek(node.metadata.extents[0].start * ISO_SECTOR_SIZE);
+	if (fs::is_optical_raw_device(path))
+	{
+		is_raw_device = true;
+	}
+
+	m_file = std::move(fs::file(path));
+
+	m_meta.name = path;
+	m_meta.extents.push_back({0, m_file.size()});
+
+	m_file.seek(m_meta.extents[0].start * ISO_SECTOR_SIZE);
+}
+
+iso_file::iso_file(const std::string& path, std::shared_ptr<iso_file_decryption> iso_dec, const iso_fs_node& node)
+	: m_dec(iso_dec), m_meta(node.metadata)
+{
+	if (fs::is_optical_raw_device(path))
+	{
+		is_raw_device = true;
+	}
+
+	m_file = std::move(fs::file(path));
+
+	m_file.seek(m_meta.extents[0].start * ISO_SECTOR_SIZE);
 }
 
 fs::stat_t iso_file::get_stat()
@@ -913,16 +944,86 @@ u64 iso_file::read_at(u64 offset, void* buffer, u64 size)
 	u64 total_read;
 
 	// If it's a non-encrypted type
-	if (m_dec->get_enc_type() == iso_encryption_type::NONE)
+	if (!m_dec || m_dec->get_enc_type() == iso_encryption_type::NONE)
 	{
-		total_read = m_file.read_at(archive_first_offset, buffer, max_size);
-
-		if (size > total_read && (offset + total_read) < total_size)
+		if (!is_raw_device)
 		{
-			total_read += read_at(offset + total_read, reinterpret_cast<u8*>(buffer) + total_read, size - total_read);
+			total_read = m_file.read_at(archive_first_offset, buffer, max_size);
+
+			if (size > total_read && (offset + total_read) < total_size)
+			{
+				total_read += read_at(offset + total_read, reinterpret_cast<u8*>(buffer) + total_read, size - total_read);
+			}
+
+			return total_read;
 		}
 
-		return total_read;
+		const u64 archive_last_offset = archive_first_offset + max_size - 1;
+		iso_sector first_sec, last_sec;
+
+		first_sec.lba_address = (archive_first_offset / ISO_SECTOR_SIZE) * ISO_SECTOR_SIZE;
+		first_sec.offset = archive_first_offset % ISO_SECTOR_SIZE;
+		first_sec.size = first_sec.offset + max_size <= ISO_SECTOR_SIZE ? max_size : ISO_SECTOR_SIZE - first_sec.offset;
+
+		last_sec.lba_address = last_sec.address_aligned = (archive_last_offset / ISO_SECTOR_SIZE) * ISO_SECTOR_SIZE;
+		// last_sec.offset = last_sec.offset_aligned = 0; // Always 0 so no need to set and use those attributes
+		last_sec.size = (archive_last_offset % ISO_SECTOR_SIZE) + 1;
+
+		//
+		// First sector
+		//
+
+		total_read = m_file.read_at(first_sec.lba_address, first_sec.buf.data(), ISO_SECTOR_SIZE);
+		memcpy(buffer, &first_sec.buf.data()[first_sec.offset], first_sec.size);
+
+		u64 sector_count = (last_sec.lba_address - first_sec.lba_address) / ISO_SECTOR_SIZE + 1;
+
+		if (sector_count < 2) // If no more sector(s)
+		{
+			if (total_read != ISO_SECTOR_SIZE)
+			{
+				iso_log.error("read_at: %s: Error reading from file", m_meta.name);
+
+				seek(m_pos, fs::seek_set);
+				return 0;
+			}
+
+			return max_size;
+		}
+
+		//
+		// Inner sector(s), if any
+		//
+
+		u64 expected_inner_sector_read = 0;
+
+		if (sector_count > 2) // If inner sector(s) are present
+		{
+			u64 inner_sector_size = expected_inner_sector_read = (sector_count - 2) * ISO_SECTOR_SIZE;
+
+			total_read += m_file.read_at(first_sec.lba_address + ISO_SECTOR_SIZE, &reinterpret_cast<u8*>(buffer)[first_sec.size], inner_sector_size);
+		}
+
+		//
+		// Last sector
+		//
+
+		total_read += m_file.read_at(last_sec.address_aligned, last_sec.buf.data(), ISO_SECTOR_SIZE);
+		memcpy(&reinterpret_cast<u8*>(buffer)[max_size - last_sec.size], last_sec.buf.data(), last_sec.size);
+
+		//
+		// As last, check for an unlikely reading error (decoding also failed due to use of partially initialized buffer)
+		//
+
+		if (total_read != ISO_SECTOR_SIZE + ISO_SECTOR_SIZE + expected_inner_sector_read)
+		{
+			iso_log.error("read_at: %s: Error reading from file", m_meta.name);
+
+			seek(m_pos, fs::seek_set);
+			return 0;
+		}
+
+		return max_size;
 	}
 
 	// If it's an encrypted type
@@ -1180,7 +1281,7 @@ std::unique_ptr<fs::file_base> iso_device::open(const std::string& path, bs_t<fs
 		return nullptr;
 	}
 
-	return std::make_unique<iso_file>(fs::file(m_path, mode), m_archive.get_dec(), *node);
+	return std::make_unique<iso_file>(m_archive.get_iso_file(m_path, *node));
 }
 
 std::unique_ptr<fs::dir_base> iso_device::open_dir(const std::string& path)

@@ -62,6 +62,7 @@ enum class iso_type_status
 class iso_file_decryption
 {
 private:
+	fs::file m_file;
 	aes_context m_aes_dec;
 	iso_encryption_type m_enc_type = iso_encryption_type::NONE;
 	std::vector<iso_region_info> m_region_info;
@@ -107,6 +108,7 @@ private:
 	std::shared_ptr<iso_file_decryption> m_dec;
 	iso_fs_metadata m_meta;
 	u64 m_pos = 0;
+	bool is_raw_device = false;
 
 	std::pair<u64, iso_extent_info> get_extent_pos(u64 pos) const;
 	u64 local_extent_remaining(u64 pos) const;
@@ -114,7 +116,9 @@ private:
 	u64 file_offset(u64 pos) const;
 
 public:
-	iso_file(fs::file&& iso_handle, std::shared_ptr<iso_file_decryption> iso_dec, const iso_fs_node& node);
+	iso_file(const std::string& path);
+	//iso_file(fs::file&& iso_handle, std::shared_ptr<iso_file_decryption> iso_dec, const iso_fs_node& node);
+	iso_file(const std::string& path, std::shared_ptr<iso_file_decryption> iso_dec, const iso_fs_node& node);
 
 	fs::stat_t get_stat() override;
 	bool trunc(u64 length) override;
@@ -161,6 +165,7 @@ public:
 	bool exists(const std::string& path);
 	bool is_file(const std::string& path);
 
+	iso_file get_iso_file(std::string& path, const iso_fs_node& node);
 	iso_file open(const std::string& path);
 	psf::registry open_psf(const std::string& path);
 };

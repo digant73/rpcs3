@@ -1,7 +1,7 @@
 #include "File.h"
 #include "mutex.h"
 #include "StrFmt.h"
-
+#include "stdafx.h"
 #include <span>
 #include <unordered_map>
 #include <algorithm>
@@ -11,6 +11,9 @@
 
 #include "util/asm.hpp"
 #include "util/coro.hpp"
+
+#include "util/types.hpp"
+LOG_CHANNEL(sys_log, "SYS");
 
 using namespace std::literals::string_literals;
 
@@ -25,6 +28,7 @@ std::string g_android_cache_dir;
 #include "Utilities/StrUtil.h"
 
 #include <cwchar>
+#include <tchar.h>
 #include <Windows.h>
 
 static std::unique_ptr<wchar_t[]> to_wchar(std::string_view source)
@@ -37,6 +41,17 @@ static std::unique_ptr<wchar_t[]> to_wchar(std::string_view source)
 
 	// Buffer for max possible output length
 	std::unique_ptr<wchar_t[]> buffer(new wchar_t[buf_size + 8 + 32768]);
+
+	// If path points to an optical raw device, copy it AS IS
+	if (fs::is_optical_raw_device(std::string(source)))
+	{
+		ensure(MultiByteToWideChar(CP_UTF8, 0, source.data(), size, buffer.get() + 32768, size)); // "to_wchar"
+
+		// Canonicalize wide path (replace '/', ".", "..", \\ repetitions, etc)
+		ensure(GetFullPathNameW(buffer.get() + 32768, 32768, buffer.get(), nullptr) - 1 < 32768 - 1); // "to_wchar"
+
+		return buffer;
+	}
 
 	// Prepend wide path prefix (4 characters)
 	std::memcpy(buffer.get() + 32768, L"\\\\\?\\", 4 * sizeof(wchar_t));
@@ -467,7 +482,7 @@ namespace fs
 				const u64 pos = m_pos;
 				ovl.Offset = DWORD(pos);
 				ovl.OffsetHigh = DWORD(pos >> 32);
-				ensure(ReadFile(m_handle, data, size, &nread, &ovl) || GetLastError() == ERROR_HANDLE_EOF); // "file::read"
+				/* ensure(*/ReadFile(m_handle, data, size, &nread, &ovl)/* || GetLastError() == ERROR_HANDLE_EOF)*/; // "file::read"
 				nread_sum += nread;
 				m_pos += nread;
 
@@ -495,7 +510,7 @@ namespace fs
 				OVERLAPPED ovl{};
 				ovl.Offset = DWORD(offset);
 				ovl.OffsetHigh = DWORD(offset >> 32);
-				ensure(ReadFile(m_handle, data, size, &nread, &ovl) || GetLastError() == ERROR_HANDLE_EOF); // "file::read"
+				/*ensure(*/ReadFile(m_handle, data, size, &nread, &ovl)/* || GetLastError() == ERROR_HANDLE_EOF)*/; // "file::read"
 				nread_sum += nread;
 
 				if (nread < size)
@@ -566,9 +581,26 @@ namespace fs
 		{
 			// NOTE: this can fail if we access a mounted empty drive (e.g. after unmounting an iso).
 			LARGE_INTEGER size;
-			ensure(GetFileSizeEx(m_handle, &size)); // "file::size"
+			//ensure(GetFileSizeEx(m_handle, &size)); // "file::size"
 
-			return size.QuadPart;
+			// It will fail for a raw device.
+			if (GetFileSizeEx(m_handle, &size)) // "file::size"
+			{
+				return size.QuadPart;
+			}
+
+			// For a raw device, we need to use DeviceIoControl.
+			DISK_GEOMETRY_EX geometry;
+			DWORD bytesReturned;
+
+			if (DeviceIoControl(m_handle, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX,	nullptr, 0, &geometry, sizeof(geometry), &bytesReturned, nullptr))
+			{
+				sys_log.error("SIZE FILE %d", geometry.DiskSize.QuadPart);
+				return geometry.DiskSize.QuadPart;
+			}
+
+			sys_log.error("SIZE FILE FALLITA %d", geometry.DiskSize.QuadPart);
+			return geometry.DiskSize.QuadPart;
 		}
 
 		native_handle get_handle() override
@@ -1091,6 +1123,56 @@ bool fs::is_symlink(const std::string& path)
 	return true;
 }
 
+bool fs::is_optical_raw_device(const std::string& path)
+{
+#ifdef _WIN32
+	if (path.starts_with("\\\\.\\"))
+	{
+		return true;
+	}
+
+	return false;
+#endif
+	return false;
+}
+
+bool fs::get_optical_raw_device(const std::string& path, std::string& raw_device)
+{
+#ifdef _WIN32
+	constexpr u32 BUF_SIZE = 1000;
+	WCHAR buf[BUF_SIZE];
+	LPWSTR p_buf = buf;
+
+	// GetLogicalDriveStrings() returns a double-null terminated list of null-terminated strings.
+	// E.g. A:\<nul>B:\<nul>C:\<nul><nul>
+	DWORD chr_copied = GetLogicalDriveStrings(BUF_SIZE - 1, buf);
+
+	while (chr_copied)
+	{
+		if (DRIVE_CDROM == GetDriveType(p_buf))
+		{
+			std::wstring ws(p_buf);
+			std::string s = std::string(ws.begin(), ws.end() - 1);
+
+			if (path.starts_with(s))
+			{
+				//raw_device = "\\\\.\\" + s;
+				raw_device = "\\\\.\\CDROM0";
+				return true;
+			}
+		}
+
+		size_t len = _tcslen(buf);
+
+		chr_copied -= len + 1;
+		p_buf += len + 1;
+	}
+
+	return false;
+#endif
+	return false;
+}
+
 bool fs::statfs(const std::string& path, fs::device_stat& info)
 {
 	if (auto device = get_virtual_device(path))
@@ -1607,6 +1689,7 @@ fs::file::file(const std::string& path, bs_t<open_mode> mode)
 
 	if (auto device = get_virtual_device(path))
 	{
+		sys_log.error("VIRTUAL DEVICE: %s %s", path, to_wchar(path).get());
 		if (auto&& _file = device->open(path, mode))
 		{
 			m_file = std::move(_file);
@@ -1654,6 +1737,7 @@ fs::file::file(const std::string& path, bs_t<open_mode> mode)
 
 	if (handle == INVALID_HANDLE_VALUE)
 	{
+		//sys_log.error("ARRIVA 2: %s", to_wchar(path).get());
 		g_tls_error = to_error(GetLastError());
 		return;
 	}
@@ -1661,6 +1745,15 @@ fs::file::file(const std::string& path, bs_t<open_mode> mode)
 	// Check if the handle is actually valid.
 	// This can fail on empty mounted drives (e.g. with ERROR_NOT_READY or ERROR_INVALID_FUNCTION).
 	BY_HANDLE_FILE_INFORMATION info{};
+
+	// If path points to an optical raw device
+	if (is_optical_raw_device(path))
+	{
+		sys_log.error("CREATO RAW DEVICE: %s %s", path, to_wchar(path).get());
+		m_file = std::make_unique<windows_file>(handle);
+		return;
+	}
+
 	if (!GetFileInformationByHandle(handle, &info))
 	{
 		const DWORD last_error = GetLastError();
@@ -1671,13 +1764,15 @@ fs::file::file(const std::string& path, bs_t<open_mode> mode)
 			g_tls_error = fs::error::isdir;
 			return;
 		}
-	
+
+		sys_log.success("ARRIVA 4: %s", to_wchar(path).get());
 		g_tls_error = to_error(last_error);
 		return;
 	}
 
 	if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 	{
+		sys_log.success("ARRIVA 5: %s", to_wchar(path).get());
 		CloseHandle(handle);
 		g_tls_error = fs::error::isdir;
 		return;
@@ -1685,6 +1780,7 @@ fs::file::file(const std::string& path, bs_t<open_mode> mode)
 
 	if (info.dwFileAttributes & FILE_ATTRIBUTE_SYSTEM)
 	{
+		sys_log.success("ARRIVA 6: %s", to_wchar(path).get());
 		CloseHandle(handle);
 		g_tls_error = fs::error::acces;
 		return;
@@ -1692,6 +1788,7 @@ fs::file::file(const std::string& path, bs_t<open_mode> mode)
 
 	if ((mode & fs::write) && (info.dwFileAttributes & FILE_ATTRIBUTE_READONLY))
 	{
+		sys_log.success("ARRIVA 7: %s", to_wchar(path).get());
 		CloseHandle(handle);
 		g_tls_error = fs::error::readonly;
 		return;
