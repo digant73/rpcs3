@@ -1127,6 +1127,13 @@ bool fs::is_optical_raw_device(const std::string& path)
 
 bool fs::get_optical_raw_device(const std::string& path, std::string* raw_device)
 {
+	// Skip a useless check to detect an optical raw device if navigating on subfolders (e.g. C:/subfolder_1/subfolder_2/), it means we are on a hdd/ssd.
+	// A path for an optical drive should include only the drive letter (e.g. E:/)
+	if (path.find_first_of(":") != path.find_last_not_of(delim))
+	{
+		return false;
+	}
+
 	if (fs::is_optical_raw_device(path))
 	{
 		if (raw_device)
@@ -1745,6 +1752,17 @@ fs::file::file(const std::string& path, bs_t<open_mode> mode)
 	// (the following GetFileInformationByHandle() would always fail on a raw device).
 	if (is_optical_raw_device(path))
 	{
+		DISK_GEOMETRY_EX geometry;
+
+		// Try to retrieve information on content. If it fails, no disc is probably mounted so abort the file opening
+		if (!DeviceIoControl(handle, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, nullptr, 0, &geometry, sizeof(geometry), nullptr, nullptr))
+		{
+			const DWORD last_error = GetLastError();
+			CloseHandle(handle);
+			g_tls_error = to_error(last_error);
+			return;
+		}
+
 		m_file = std::make_unique<windows_file>(handle, true);
 		return;
 	}
