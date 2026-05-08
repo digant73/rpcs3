@@ -187,7 +187,6 @@ void game_list_context_menu::show_single_selection_context_menu(const game_info&
 			}
 		}
 		config_checker* dlg = new config_checker(m_game_list_frame, QString::fromStdString(serial), config_checker::checker_mode::gamelist, db_config);
-		dlg->setAttribute(Qt::WA_DeleteOnClose);
 		dlg->open();
 	});
 
