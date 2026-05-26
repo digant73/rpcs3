@@ -782,7 +782,8 @@
     <ClInclude Include="Emu\vfs_config.h" />
     <ClInclude Include="Loader\disc.h" />
     <ClInclude Include="Loader\content_validation.h" />
-    <ClInclude Include="Loader\iso_cache.h" />    <ClInclude Include="Loader\mself.hpp" />
+    <ClInclude Include="Loader\iso_cache.h" />
+    <ClInclude Include="Loader\mself.hpp" />
     <ClInclude Include="util\atomic.hpp" />
     <ClInclude Include="util\bit_set.hpp" />
     <ClInclude Include="util\bless.hpp" />
@@ -1065,7 +1066,6 @@
     <ClInclude Include="Loader\PUP.h" />
     <ClInclude Include="Loader\TAR.h" />
     <ClInclude Include="Loader\ISO.h" />
-    <ClInclude Include="Loader\iso_cache.h" />
     <ClInclude Include="Loader\TROPUSR.h" />
     <ClInclude Include="Loader\TRP.h" />
     <ClInclude Include="rpcs3_version.h" />
