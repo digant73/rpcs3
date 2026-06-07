@@ -164,8 +164,11 @@ namespace rsx
 			// Read current zcull statistics into the address provided
 			void read_report(class ::rsx::thread* ptimer, vm::addr_t sink, u32 type);
 
-			// Clears current stat block and increments stat_tag_id
-			void clear(class ::rsx::thread* ptimer, u32 type);
+			// Clears current stat block and increments stat_tag_id.
+			// discard_active_query: drop any in-flight query (correct for an explicit game-issued
+			// clear-report which resets the counter). Must be false for the internal per-flip
+			// leak workaround, otherwise legitimate deferred queries (read next frame) are lost.
+			void clear(class ::rsx::thread* ptimer, u32 type, bool discard_active_query = true);
 
 			// Forcefully flushes all
 			void sync(class ::rsx::thread* ptimer);

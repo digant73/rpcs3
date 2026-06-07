@@ -1539,7 +1539,18 @@ namespace rsx
 			}
 		}
 
-		if (depth_buffer_unused)
+		// A draw with no colour target and depth-test disabled, but with an active ZPASS occlusion
+		// query, must still rasterize against the bound depth buffer so the query produces a pixel
+		// count (e.g. the light/torch occlusion coronas in Resistance 3). Otherwise the depth buffer
+		// is dropped here, no attachment remains, the draw is discarded below ("Framebuffer setup
+		// failed") and the query returns no data - making the light flicker, which precise_zpass_count
+		// cannot mask. Keeping the resolved depth surface bound turns this into a (read-only, since
+		// depth writes are off) depth-only framebuffer, an already-supported configuration.
+//		const bool keep_depth_for_query = depth_buffer_unused && color_buffer_unused && layout.zeta_address &&
+//			!!method_registers.registers[NV4097_SET_ZPASS_PIXEL_COUNT_ENABLE];
+
+//		if (depth_buffer_unused && !keep_depth_for_query)
+		if (depth_buffer_unused && !color_buffer_unused)
 		{
 			layout.zeta_address = 0;
 		}
@@ -3264,8 +3275,11 @@ namespace rsx
 			// NOTE: This is a workaround for buggy games.
 			// Some applications leave the zpass/stats gathering active but don't use the information.
 			// This can lead to the zcull unit using up all the memory queueing up operations that never get consumed.
-			// Seen in Diablo III and Yakuza 5
-			zcull_ctrl->clear(this, CELL_GCM_ZPASS_PIXEL_CNT | CELL_GCM_ZCULL_STATS);
+			// Seen in Diablo III and Yakuza 5.
+			// Do not discard the active in-flight query here: it may belong to a legitimate
+			// deferred occlusion read consumed next frame (e.g. Resistance 3). Only drain
+			// the unclaimed pending writes.
+			zcull_ctrl->clear(this, CELL_GCM_ZPASS_PIXEL_CNT | CELL_GCM_ZCULL_STATS, false);
 		}
 
 		// Save current state

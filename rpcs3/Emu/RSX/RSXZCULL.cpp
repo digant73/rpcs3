@@ -252,7 +252,7 @@ namespace rsx
 			m_free_occlusion_pool.push(query);
 		}
 
-		void ZCULL_control::clear(class ::rsx::thread* ptimer, u32 type)
+		void ZCULL_control::clear(class ::rsx::thread* ptimer, u32 type, bool discard_active_query)
 		{
 			if (!(type & CELL_GCM_ZPASS_PIXEL_CNT))
 			{
@@ -261,7 +261,9 @@ namespace rsx
 			}
 
 			// Discard any running queries. The results will never be read anyway.
-			if (m_current_task && m_current_task->active)
+			// Skipped for the per-flip leak workaround: a query in flight there may still be read
+			// next frame (deferred occlusion reads), so discarding it would drop valid results.
+			if (discard_active_query && m_current_task && m_current_task->active)
 			{
 				discard_occlusion_query(m_current_task);
 				free_query(m_current_task);
