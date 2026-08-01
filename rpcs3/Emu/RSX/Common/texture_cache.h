@@ -1991,8 +1991,8 @@ namespace rsx
 				overlapping_locals.erase_if([&](const auto& e)
 				{
 					return e->is_dirty() ||
-						(e->get_context() != rsx::texture_upload_context::blit_engine_dst) ||
-						(get_format_block_size_in_bytes(e->get_gcm_format()) != attr.bpp);
+						(e->get_context() != rsx::texture_upload_context::blit_engine_dst) /*||
+						(get_format_block_size_in_bytes(e->get_gcm_format()) != attr.bpp)*/;
 				});
 			}
 
