@@ -138,6 +138,50 @@ namespace rsx
 		current_draw_clause = {};
 		register_vertex_info = {};
 
+		// Reset state of the constant vertex attribute register file.
+		// When a vertex program reads an attribute that has neither an array bound nor a constant register
+		// written by the game, the hardware returns the reset value of the corresponding register.
+		// The generic reset value is (0, 0, 0, 1) - this matches both the NV generic attribute default and
+		// the GL fixed-function defaults for normals, texture coordinates (q = 1) and secondary color.
+		// The two exceptions are the attributes GL defines as one: the primary color and the point size.
+		// NOTE: Values are stored in PS3-native (BE) order because the register upload path in
+		// draw_command_processor::fill_vertex_layout_state always sets the byte swap flag.
+		{
+			static constexpr f32 attrib_reset_values[16][4] =
+			{
+				{ 0.f, 0.f, 0.f, 1.f }, // 0  position
+				{ 0.f, 0.f, 0.f, 1.f }, // 1  weight
+				{ 0.f, 0.f, 0.f, 1.f }, // 2  normal
+				{ 1.f, 1.f, 1.f, 1.f }, // 3  diffuse
+				{ 0.f, 0.f, 0.f, 1.f }, // 4  specular
+				{ 0.f, 0.f, 0.f, 1.f }, // 5  fog
+				{ 1.f, 1.f, 1.f, 1.f }, // 6  point size
+				{ 0.f, 0.f, 0.f, 1.f }, // 7
+				{ 0.f, 0.f, 0.f, 1.f }, // 8  texcoord0
+				{ 0.f, 0.f, 0.f, 1.f }, // 9  texcoord1
+				{ 0.f, 0.f, 0.f, 1.f }, // 10 texcoord2
+				{ 0.f, 0.f, 0.f, 1.f }, // 11 texcoord3
+				{ 0.f, 0.f, 0.f, 1.f }, // 12 texcoord4
+				{ 0.f, 0.f, 0.f, 1.f }, // 13 texcoord5
+				{ 0.f, 0.f, 0.f, 1.f }, // 14 texcoord6
+				{ 0.f, 0.f, 0.f, 1.f }  // 15 texcoord7
+			};
+
+			for (u32 i = 0; i < 16; i++)
+			{
+				auto& reg = register_vertex_info[i];
+				reg.type = rsx::vertex_base_type::f;
+				reg.size = 4;
+				reg.frequency = 0;
+				reg.stride = 0;
+
+				for (u32 c = 0; c < 4; c++)
+				{
+					reg.data[c] = std::bit_cast<u32, be_t<u32>>(std::bit_cast<u32>(attrib_reset_values[i][c]));
+				}
+			}
+		}
+
 		// Special values set at initialization, these are not set by a context reset
 		registers[NV4097_SET_SHADER_PROGRAM] = (0 << 2) | (CELL_GCM_LOCATION_LOCAL + 1);
 

@@ -154,6 +154,15 @@ namespace rsx
 			bool do_not_cache = false;
 			bool force_bg_load = false;
 
+			// Address of the first declared mip level that was simply not there when the chain was walked,
+			// or 0 if the chain came out complete (or broke for any other reason). A game may be
+			// rendering that level right now - building a pyramid by rendering into the mip levels of a
+			// texture it samples at the same time is a real pattern - so the truncated view must not
+			// outlive the level's arrival. The tag is the surface store's write_tag at walk time, so the
+			// revisit is only considered after the store has actually moved on.
+			u32 incomplete_mip_address = 0;
+			u64 incomplete_mip_tag = 0;
+
 			deferred_subresource() = default;
 
 			deferred_subresource(image_resource_type _res, deferred_request_command _op,
@@ -368,6 +377,25 @@ namespace rsx
 			template <typename surface_store_type, typename surface_type = typename surface_store_type::surface_type>
 			std::pair<bool, surface_type> is_expired(surface_store_type& surface_cache)
 			{
+				// A view assembled while some of the texture's declared mip levels were still unrendered
+				// is pinned to that truncated state: between such passes a game changes only the render
+				// target, so the texture registers never move and nothing marks the texture state dirty.
+				// Expire it once the missing level actually materialises in the surface cache.
+				//
+				// incomplete_mip_address is only ever set while walking a mip chain, so it alone
+				// identifies the case - no need to test the op, and testing it would miss the chain that
+				// found nothing beyond the base level and so never became a gather at all.
+				//
+				// Gated on the store having been written since, so a level that stays unusable costs at
+				// most one retry per surface store write rather than one per draw. Checked ahead of the
+				// framebuffer_storage guard below because the walk also runs with blit_engine_dst.
+				if (external_subresource_desc.incomplete_mip_address &&
+					surface_cache.write_tag > external_subresource_desc.incomplete_mip_tag &&
+					surface_cache.get_surface_at(external_subresource_desc.incomplete_mip_address))
+				{
+					return { true, nullptr };
+				}
+
 				if (upload_context != rsx::texture_upload_context::framebuffer_storage)
 				{
 					return {};
@@ -1710,7 +1738,11 @@ namespace rsx
 						found_desc.op != desc.op ||
 						found_desc.x != desc.x || found_desc.y != desc.y ||
 						found_desc.width != desc.width || found_desc.height != desc.height ||
-						found_desc.gcm_format != desc.gcm_format)
+						found_desc.gcm_format != desc.gcm_format ||
+						// A view built from a different number of source sections is not the same
+						// resource: without this, a truncated gather satisfies a request that would
+						// now assemble the complete mip chain.
+						found_desc.sections_to_copy.size() != desc.sections_to_copy.size())
 						continue;
 
 					if (desc.op == deferred_request_command::copy_image_dynamic)
@@ -2445,7 +2477,9 @@ namespace rsx
 				options.skip_texture_barriers = true;
 				options.prefer_surface_cache = (result.upload_context == rsx::texture_upload_context::framebuffer_storage);
 
-				for (u8 subsurface = 1; subsurface < subsurface_count; ++subsurface)
+				u8 subsurface = 1;
+				bool mip_level_absent = false;
+				for (; subsurface < subsurface_count; ++subsurface)
 				{
 					attr2.address += (attr2.pitch * attr2.height);
 					attr2.width = std::max(attr2.width / 2, 1);
@@ -2461,16 +2495,34 @@ namespace rsx
 					auto ret = fast_texture_search(cmd, attr2, scale, tex.decoded_remap(),
 						options, range, extended_dimension, m_rtts, std::forward<Args>(extras)...);
 
-					if (!ret.validate() ||
-						!helpers::append_mipmap_level(to_surface_type, sections, ret, attr2, subsurface, use_upscaling, attributes))
+					if (!ret.validate())
 					{
-						// Abort
+						// Nothing usable at this address yet - the level may be about to be rendered.
+						// Worth revisiting once it shows up.
+						mip_level_absent = true;
+						break;
+					}
+
+					if (!helpers::append_mipmap_level(to_surface_type, sections, ret, attr2, subsurface, use_upscaling, attributes))
+					{
+						// Present, but not usable as a mip level of this chain. Re-gathering later would
+						// reach the same conclusion, so do not arm the revisit.
 						break;
 					}
 				}
 
 				if (sections.size() == 1) [[unlikely]]
 				{
+					// Only the base level was there, so this stays a plain single-level texture rather
+					// than a gather. Arm the revisit anyway: the remaining levels may be rendered in the
+					// draws that follow, and without this the descriptor would be pinned to level 0 for
+					// the rest of the burst.
+					if (mip_level_absent)
+					{
+						result.external_subresource_desc.incomplete_mip_address = attr2.address;
+						result.external_subresource_desc.incomplete_mip_tag = m_rtts.write_tag;
+					}
+
 					return result;
 				}
 				else
@@ -2492,6 +2544,34 @@ namespace rsx
 						const auto& mip0 = sections.front();
 						result.external_subresource_desc.width = mip0.dst_w;
 						result.external_subresource_desc.height = mip0.dst_h;
+					}
+
+					// The walk above aborts as soon as a declared mip level is missing from the surface
+					// store, which is exactly what happens while a game renders that level. Record where
+					// the chain broke, then keep walking so the watched range still spans every declared
+					// level - otherwise a sibling pass writing one of the missing levels lands outside
+					// cache_range and never evicts this truncated view.
+					if (mip_level_absent)
+					{
+						result.external_subresource_desc.incomplete_mip_address = attr2.address;
+						result.external_subresource_desc.incomplete_mip_tag = m_rtts.write_tag;
+					}
+
+					if (subsurface < subsurface_count)
+					{
+						const u32 declared_levels = subsurface_count;
+
+						for (u32 level = subsurface + 1u; level < declared_levels; ++level)
+						{
+							attr2.address += (attr2.pitch * attr2.height);
+							attr2.width = std::max(attr2.width / 2, 1);
+							attr2.height = std::max(attr2.height / 2, 1);
+
+							if (attributes.swizzled)
+							{
+								attr2.pitch = attr2.width * attr2.bpp;
+							}
+						}
 					}
 
 					const u32 cache_end = attr2.address + (attr2.pitch * attr2.height);
