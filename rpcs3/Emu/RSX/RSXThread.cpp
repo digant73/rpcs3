@@ -378,24 +378,40 @@ namespace rsx
 			const u32 index_size = index_type == rsx::index_array_type::u32 ? 4 : 2;
 
 			const auto render = rsx::get_current_renderer();
+			const u32 required_size = utils::mul_saturate<u32>(_max_index + 1, attribute_stride);
 
 			// If we can access a bit a more memory than required - do it
 			// The alternative would be re-iterating again over all of them
 			if (get_location(real_offset_address) == CELL_GCM_LOCATION_LOCAL)
 			{
-				if (utils::add_saturate<u32>(real_offset_address - rsx::constants::local_mem_base, (_max_index + 1) * attribute_stride) <= render->local_mem_size)
+				if (utils::add_saturate<u32>(real_offset_address - rsx::constants::local_mem_base, required_size) <= render->local_mem_size)
 				{
 					break;
 				}
 			}
-			else if (real_offset_address % 0x100000 + (_max_index + 1) * attribute_stride <= 0x100000)//(vm::check_addr(real_offset_address, vm::page_readable, (_max_index + 1) * attribute_stride))
+			else if (vm::check_addr(real_offset_address, vm::page_readable, required_size))
 			{
 				break;
+			}
+
+			// A residue can never exceed its own divisor, so this is the best result re-evaluation can ever return.
+			// Reaching it means the conservative estimate was already tight and the scan can stop.
+			u32 max_possible_index = 0;
+
+			for (u32 freq_it = 0; freq_it < freq_count; freq_it++)
+			{
+				max_possible_index = std::max<u32>(max_possible_index, frequencies[freq_it] - 1);
 			}
 
 			// Re-evaluation only narrows down the modulo attributes. Attributes using the division operator
 			// are not bound by it, so their requirement is a floor that must survive the scan.
 			_max_index = max_result_by_division;
+
+			if (_max_index >= max_possible_index)
+			{
+				// The division operator already demands at least as much as any modulo residue could, nothing to scan for
+				break;
+			}
 
 			// The shader takes the residue of the REBASED index, see read_location() in RSXVertexFetch.glsl:
 			// vertex_id = (_gl_VertexID + vertex_index_offset) % frequency, with vertex_index_offset = vertex_data_base_index().
@@ -425,6 +441,12 @@ namespace rsx
 						if (res > _max_index)
 						{
 							_max_index = res;
+
+							if (_max_index == max_possible_index)
+							{
+								// Cannot be improved upon
+								return;
+							}
 						}
 					}
 				}
