@@ -347,12 +347,14 @@ namespace rsx
 				else
 				{
 					// Division operator
-					_min_index = std::min(_min_index, first / attrib.frequency);
-					_max_index = std::max<u32>(_max_index, utils::aligned_div(max_index, attrib.frequency));
+					const u32 max = utils::aligned_div(max_index, attrib.frequency);
 
-					if (freq_count > 0 && freq_count != umax)
+					_min_index = std::min(_min_index, first / attrib.frequency);
+					_max_index = std::max<u32>(_max_index, max);
+
+					if (freq_count != umax)
 					{
-						const u32 max = utils::aligned_div(max_index, attrib.frequency);
+						// NOTE: This must be tracked even while no frequency has been registered yet, a modulo attribute may still follow this one
 						max_result_by_division = std::max<u32>(max_result_by_division, max);
 
 						// Discard lower frequencies because it has been proven that there are indices higher than them
@@ -391,7 +393,14 @@ namespace rsx
 				break;
 			}
 
-			_max_index = 0;
+			// Re-evaluation only narrows down the modulo attributes. Attributes using the division operator
+			// are not bound by it, so their requirement is a floor that must survive the scan.
+			_max_index = max_result_by_division;
+
+			// The shader takes the residue of the REBASED index, see read_location() in RSXVertexFetch.glsl:
+			// vertex_id = (_gl_VertexID + vertex_index_offset) % frequency, with vertex_index_offset = vertex_data_base_index().
+			// The index array itself holds raw values, so the base has to be applied here too.
+			const u32 index_base = rsx::method_registers.vertex_data_base_index();
 
 			const auto re_evaluate = [&] <typename T> (const std::byte* ptr, u32 element_count, T)
 			{
@@ -401,14 +410,17 @@ namespace rsx
 				{
 					const auto value = read_from_ptr_unsafe<be_t<T>>(ptr, _index * sizeof(T));
 
+					// NOTE: The restart index is matched against the raw value, before rebasing
 					if (value == restart)
 					{
 						continue;
 					}
 
+					const u32 rebased = static_cast<u32>(value) + index_base;
+
 					for (u32 freq_it = 0; freq_it < freq_count; freq_it++)
 					{
-						const auto res = value % frequencies[freq_it];
+						const u32 res = rebased % frequencies[freq_it];
 
 						if (res > _max_index)
 						{
