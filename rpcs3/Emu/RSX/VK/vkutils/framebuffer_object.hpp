@@ -3,6 +3,7 @@
 #include "../VulkanAPI.h"
 #include "image.h"
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -73,6 +74,14 @@ namespace vk
 		{
 			ensure(!attachments.empty());
 			return attachments.back()->image()->format();
+		}
+
+		bool references_any(const std::vector<VkImage>& resources) const
+		{
+			return std::any_of(attachments.cbegin(), attachments.cend(), [&resources](const auto& att)
+			{
+				return std::find(resources.cbegin(), resources.cend(), att->info.image) != resources.cend();
+			});
 		}
 
 		bool matches(const std::vector<vk::image*>& fbo_images, u32 width, u32 height) const

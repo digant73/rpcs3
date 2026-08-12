@@ -115,6 +115,10 @@ namespace vk
 
 		// Memory management
 		bool spill(vk::command_buffer& cmd, std::vector<std::unique_ptr<vk::viewable_image>>& resolve_cache);
+		// Tear down every GPU resource this surface owns - views, VkImage, device memory, MSAA
+		// resolve target and spill buffer - while leaving the C++ object itself intact so that it
+		// can still be handed to the deferred GC. See surface_cache::trim.
+		void release_gpu_resources();
 
 		// Synchronization
 		void texture_barrier(vk::command_buffer& cmd);

@@ -14,4 +14,9 @@ namespace vk
 
 	void remove_unused_framebuffers();
 	void clear_framebuffer_cache();
+
+	// Drops every cached framebuffer holding a view on one of these images. Required whenever a
+	// VkImage is destroyed, because the cache builds its own image views and holds no reference to
+	// the surface they came from.
+	void purge_framebuffers_referencing(const std::vector<VkImage>& images);
 }

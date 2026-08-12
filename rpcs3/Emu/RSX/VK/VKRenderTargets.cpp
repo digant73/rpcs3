@@ -1,6 +1,7 @@
 #include "vkutils/data_heap.h"
 #include "VKRenderTargets.h"
 #include "VKResourceManager.h"
+#include "VKFramebuffer.h"
 #include "Emu/RSX/rsx_methods.h"
 #include "Emu/RSX/RSXThread.h"
 
@@ -172,6 +173,21 @@ namespace vk
 		return any_released;
 	}
 
+	// NOTE (regression from PR #17508, issue #17879 / GT6 menu corruption):
+	// That PR correctly stopped destroying invalidated surfaces inline and handed them to the
+	// deferred GC instead, which closed a use-after-free. The side effect is that the surface's
+	// GPU resources - in particular its VkImage - stay alive for roughly one more submission, and
+	// that alone reproducibly corrupts the GT6 menus. Bisected group by group: the MSAA resolve
+	// target, the device memory and the image view cache are each harmless on their own; releasing
+	// the VkImage handle is what restores correct rendering. Nothing in the emulator reads a
+	// discarded surface afterwards and the framebuffer cache behaves identically either way, so
+	// the effect lives below our own bookkeeping, in the driver.
+	//
+	// So: release the GPU resources here, exactly as before the PR, but keep the C++ object itself
+	// alive and hand it to the GC. That preserves the use-after-free fix and restores prompt
+	// resource recycling. Since the framebuffer cache builds its own image views and holds no
+	// reference to the surfaces they came from, every cached framebuffer using one of these images
+	// has to be dropped first - the same thing GLPresent.cpp does via fbo::references_any().
 	void surface_cache::trim(vk::command_buffer& cmd, rsx::problem_severity memory_pressure)
 	{
 		run_cleanup_internal(cmd, rsx::problem_severity::moderate, 300, [](vk::command_buffer& cmd)
@@ -181,6 +197,9 @@ namespace vk
 				cmd.begin();
 			}
 		});
+
+		rsx::simple_array<std::unique_ptr<vk::render_target>*> retired;
+		std::vector<VkImage> retired_images;
 
 		const u64 last_finished_frame = vk::get_last_completed_frame_id();
 		for (auto& rtt : invalidated_resources)
@@ -232,9 +251,24 @@ namespace vk
 
 			if (threshold < 0 || (rtt->unused_check_count() >= threshold))
 			{
-				vk::get_resource_manager()->dispose(rtt);
-				ensure(!rtt);
+				// List nodes are stable, so it is safe to hold on to the slot itself
+				retired.push_back(&rtt);
+
+				if (rtt->value)
+				{
+					retired_images.push_back(rtt->value);
+				}
 			}
+		}
+
+		// Drop any framebuffer holding a view on an image we are about to destroy
+		vk::purge_framebuffers_referencing(retired_images);
+
+		for (auto* slot : retired)
+		{
+			(*slot)->release_gpu_resources();
+			vk::get_resource_manager()->dispose(*slot);
+			ensure(!*slot);
 		}
 
 		invalidated_resources.remove_if(
@@ -818,6 +852,24 @@ namespace vk
 		{
 			load_memory(cmd);
 		}
+	}
+
+	void render_target::release_gpu_resources()
+	{
+		// MSAA resolve target (a whole extra image) and the spill buffer
+		resolve_surface.reset();
+		m_spilled_mem.reset();
+
+		// Views must not outlive the image they were created from
+		views.clear();
+
+		if (value)
+		{
+			vkDestroyImage(m_device, value, nullptr);
+			value = VK_NULL_HANDLE;
+		}
+
+		memory.reset();
 	}
 
 	vk::viewable_image* render_target::get_surface(rsx::surface_access access_type)

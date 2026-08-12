@@ -103,6 +103,34 @@ namespace vk
 		}
 	}
 
+	void purge_framebuffers_referencing(const std::vector<VkImage>& images)
+	{
+		if (images.empty())
+		{
+			return;
+		}
+
+		for (auto It = g_framebuffers_cache.begin(); It != g_framebuffers_cache.end();)
+		{
+			It->second.erase(
+				std::remove_if(It->second.begin(), It->second.end(), [&images](const auto& fbo)
+				{
+					return fbo->references_any(images);
+				}),
+				It->second.end()
+			);
+
+			if (It->second.empty())
+			{
+				It = g_framebuffers_cache.erase(It);
+			}
+			else
+			{
+				++It;
+			}
+		}
+	}
+
 	void clear_framebuffer_cache()
 	{
 		g_framebuffers_cache.clear();
