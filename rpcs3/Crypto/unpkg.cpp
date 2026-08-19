@@ -998,7 +998,6 @@ fs::file DecryptEDAT(const fs::file& input, const std::string& input_file_name, 
 void package_reader::extract_worker()
 {
 	std::vector<u8> read_cache;
-	std::vector<u8> block_cache;
 
 	while (m_num_failures == 0 && !m_aborted)
 	{
@@ -1164,6 +1163,7 @@ void package_reader::extract_worker()
 						return 0;
 					}
 
+					const usz original_size = size;
 					size = std::min<u64>(entry.file_size - pos, size);
 
 					u64 size_cache_end = 0;
@@ -1193,10 +1193,11 @@ void package_reader::extract_worker()
 					// Try to cache for later
 					if (size <= BUF_SIZE && !size_cache_end && !read_size)
 					{
-						// Keep the cached block 16-byte aligned: a read that only partially hits the cache continues
-						// at cache_off + read_cache.size(), and decrypt() derives its keystream index from that
-						// offset / sizeof(u128). Clamping to the end of the entry can leave it unaligned, but no
-						// read can continue past that point anyway.
+						// Keep the cached block 16-byte aligned: a read that only partially hits the cache
+						// continues at cache_off + read_cache.size() with a block of size - read_size bytes,
+						// and decrypt() both derives its keystream index from offset / sizeof(u128) and needs
+						// the block to fit whole u128 writes. Clamping to the end of the entry can still leave
+						// it unaligned, but no read can continue past that point anyway.
 						const u64 block_size = std::min<u64>({BUF_SIZE, utils::align<u64>(std::max<u64>(size * 5 / 3, 65536), sizeof(u128)), entry.file_size - pos});
 
 						read_cache.resize(block_size + BUF_PADDING);
@@ -1220,26 +1221,22 @@ void package_reader::extract_worker()
 					while (read_size < size)
 					{
 						const u64 block_size = std::min<u64>(BUF_SIZE, size - read_size);
+						u64 available_buffer_size = original_size - read_size;
 
-						// decrypt() needs BUF_PADDING slack behind the block, and we can not make any assumption
-						// about the size of the caller's buffer: ptr may belong to any layer stacked on top of this
-						// reader (e.g. EDATADecrypter for SDAT entries), and it may already hold data taken from
-						// read_cache. So decrypt into our own buffer and only copy back what was actually read.
-						block_cache.resize(block_size + BUF_PADDING);
+						if (buffer.data() == ptr)
+						{
+							available_buffer_size = buffer.size() - read_size;
+							ensure(buffer.size() == original_size + BUF_PADDING);
+						}
 
-						ensure(block_cache.size() >= block_size + BUF_PADDING);
+						ensure(available_buffer_size >= block_size);
 
-						const usz advance_size = decrypt(entry.file_offset + pos, block_size, is_psp ? PKG_AES_KEY2 : m_dec_key.data(), block_cache);
+						const usz advance_size = decrypt(entry.file_offset + pos, block_size, is_psp ? PKG_AES_KEY2 : m_dec_key.data(), std::span<u8>{static_cast<u8*>(ptr) + read_size, available_buffer_size});
 
 						if (!advance_size)
 						{
 							break;
 						}
-
-						ensure(advance_size <= block_size);
-						ensure(read_size + advance_size <= size);
-
-						std::memcpy(static_cast<u8*>(ptr) + read_size, block_cache.data(), advance_size);
 
 						read_size += advance_size;
 						pos += advance_size;
@@ -1371,14 +1368,32 @@ package_install_result package_reader::extract_data(std::deque<package_reader>& 
 		if (reader.m_num_failures == 0)
 		{
 			const usz thread_count = std::min<usz>(utils::get_thread_count(), reader.m_install_entries.size());
+			atomic_t<u32> num_threads_succeeded {0}; // Check if any thread didn't finish. For example when hitting an exception.
 
-			named_thread_group workers("PKG Installer "sv, std::max<u32>(::narrow<u32>(thread_count), 1) - 1, [&]()
+			if (thread_count > 1)
+			{
+				named_thread_group workers("PKG Installer "sv, ::narrow<u32>(thread_count) - 1, [&]()
+				{
+					reader.extract_worker();
+					num_threads_succeeded++;
+				});
+
+				reader.extract_worker();
+				num_threads_succeeded++;
+
+				workers.join();
+			}
+			else
 			{
 				reader.extract_worker();
-			});
+				num_threads_succeeded++;
+			}
 
-			reader.extract_worker();
-			workers.join();
+			if (thread_count != num_threads_succeeded)
+			{
+				pkg_log.error("%d thread(s) failed with an exception!", thread_count - num_threads_succeeded);
+				reader.m_num_failures++;
+			}
 		}
 
 		num_failures += reader.m_num_failures;
@@ -1475,7 +1490,9 @@ usz package_reader::decrypt(u64 offset, u64 size, const uchar* key, std::span<u8
 	ensure(data_span.size() <= size);
 
 	// Clear the unread remainder of the requested range and the alignment padding behind it.
-	// Never touch anything past that: local_buf may be larger than the requested size.
+	// Never touch anything past that: local_buf may be larger than the requested size, and the
+	// caller may already have put data of its own there (see the size_cache_end branch of the
+	// extract_worker read function, which fills the tail of its buffer from read_cache first).
 	const u64 clear_end = std::min<u64>(local_buf.size(), utils::align<u64>(size, sizeof(u128)));
 
 	if (data_span.size() < clear_end)
