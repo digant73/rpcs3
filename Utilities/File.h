@@ -198,6 +198,20 @@ namespace fs
 	// Return "path" plus an ending delimiter (if missing) if "path" is an existing directory. Otherwise, an empty string
 	std::string get_path_if_dir(const std::string& path);
 
+	// Restore the trailing delimiter of a root path if it was trimmed (e.g. turn "E:" back into "E:/"). On Windows a
+	// drive name alone does not point to the root of the drive but to the current directory of that drive, so the
+	// delimiter is part of the path itself and it must not be dropped.
+	// NOTE: nothing is done on the other platforms, where a name ending with ':' is a regular path component
+	inline void restore_root_delim([[maybe_unused]] std::string& path)
+	{
+#ifdef _WIN32
+		if (!path.empty() && path.back() == ':')
+		{
+			path += '/';
+		}
+#endif
+	}
+
 	// Get file information
 	bool get_stat(const std::string& path, stat_t& info);
 
@@ -213,10 +227,11 @@ namespace fs
 	// Check whether the path points to an existing symlink
 	bool is_symlink(const std::string& path);
 
-	// Check whether the path points to a raw device
+	// Check whether the path points to a raw device (e.g. "\\.\E:" on Windows, "/dev/sr0" on Linux, "/dev/rdisk2" on macOS)
 	bool is_optical_raw_device(const std::string& path);
 
-	// Check whether the path points to an optical drive. If so, provide the raw device in "raw_device" if requested
+	// Check whether the path points to an optical drive or to a mounted disc image (either the raw device itself or the
+	// mount point of the disc/image). If so, provide the raw device in "raw_device" if requested
 	bool get_optical_raw_device(const std::string& path, std::string* raw_device = nullptr);
 
 	// Get filesystem information

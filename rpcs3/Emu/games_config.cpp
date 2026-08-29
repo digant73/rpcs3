@@ -91,6 +91,11 @@ games_config::result games_config::add_external_hdd_game(const std::string& key,
 		path = path.substr(0, path.size() - 4);
 	}
 
+	// Restore the trailing delimiter trimmed by the caller if the game is on the root of a raw device (e.g. "E:/"),
+	// which is also the form provided by "rpcs3::utils::get_games_dir()" and the one built by "GetBdvdDir()", so that
+	// the same title is always registered with the very same path
+	fs::restore_root_delim(path);
+
 	const result res = add_game(key, path);
 
 	switch (res)

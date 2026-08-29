@@ -4325,14 +4325,24 @@ u32 Emulator::AddGamesFromDir(std::string path)
 
 	m_games_config.set_save_on_dirty(false);
 
+	// A game was found on a path if it has just been added or if it was already registered
+	const auto game_found = [](game_boot_result error)
+	{
+		return error == game_boot_result::no_errors || error == game_boot_result::already_added;
+	};
+
 	// search for a game on the provided path first (game on ISO file or on folder type)
-	if (const game_boot_result error = AddGame(path); error == game_boot_result::no_errors)
+	const game_boot_result path_error = AddGame(path);
+
+	if (path_error == game_boot_result::no_errors)
 	{
 		games_added++;
 	}
 
-	// search for games on subfolders only if not nested inside a discovered game folder
-	if (games_added == 0)
+	// search for games on subfolders only if not nested inside a discovered game folder, otherwise the same title
+	// would be registered again through a different path (e.g. the root of a BD drive "E:/" is registered as a raw
+	// device, its subfolder "E:/PS3_GAME" would register it again as a disc folder)
+	if (!game_found(path_error))
 	{
 		std::vector<fs::dir_entry> entries;
 
@@ -4367,7 +4377,7 @@ u32 Emulator::AddGamesFromDir(std::string path)
 				{
 					games_added++;
 				}
-				else if (g_cfg.misc.use_recursive_scan)
+				else if (!game_found(error) && g_cfg.misc.use_recursive_scan)
 				{
 					games_added += AddGamesFromDir(dir_path);
 				}
