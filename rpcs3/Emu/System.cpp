@@ -942,6 +942,8 @@ bool Emulator::BootRsxCapture(const std::string& path)
 	GetCallbacks().on_ready();
 
 	GetCallbacks().init_gs_render(nullptr);
+	GetCallbacks().init_kb_handler();
+	GetCallbacks().init_mouse_handler();
 	GetCallbacks().init_pad_handler("");
 
 	GetCallbacks().on_run(false);
@@ -980,6 +982,10 @@ bool Emulator::BootBigPictureMode()
 	m_ar.reset();
 
 	Init();
+
+	// Make sure the games folder is parsed before we enter big picture mode.
+	AddGamesFromDir(rpcs3::utils::get_games_dir());
+
 	g_cfg.video.disable_on_disk_shader_cache.set(true);
 
 	vm::init();
@@ -996,6 +1002,8 @@ bool Emulator::BootBigPictureMode()
 	GetCallbacks().on_ready();
 
 	GetCallbacks().init_gs_render(nullptr);
+	GetCallbacks().init_kb_handler();
+	GetCallbacks().init_mouse_handler();
 	GetCallbacks().init_pad_handler("");
 
 	GetCallbacks().on_run(false);
@@ -1225,6 +1233,7 @@ game_boot_result Emulator::Load(const std::string& title_id, bool is_disc_patch,
 
 	std::string inherited_ps3_game_path;
 	bool launching_from_disc_archive = false;
+	bool launching_from_optical_drive = false;
 
 	{
 		Init();
@@ -1316,7 +1325,7 @@ game_boot_result Emulator::Load(const std::string& title_id, bool is_disc_patch,
 			std::string disc_info;
 			m_ar->serialize(argv.emplace_back(), disc_info, klic.emplace_back(), m_game_dir, hdd1);
 
-			launching_from_disc_archive = is_iso_file(disc_info);
+			launching_from_disc_archive = is_iso_file(disc_info, nullptr, &launching_from_optical_drive);
 
 			sys_log.notice("Savestate: is iso archive = %d ('%s')", launching_from_disc_archive, disc_info);
 
@@ -1622,7 +1631,7 @@ game_boot_result Emulator::Load(const std::string& title_id, bool is_disc_patch,
 		}
 
 		const std::string resolved_path = GetCallbacks().resolve_path(m_path);
-		if (!launching_from_disc_archive && is_iso_file(m_path))
+		if (!launching_from_disc_archive && is_iso_file(m_path, nullptr, &launching_from_optical_drive))
 		{
 			sys_log.notice("Loading iso archive '%s'", m_path);
 
@@ -2099,7 +2108,7 @@ game_boot_result Emulator::Load(const std::string& title_id, bool is_disc_patch,
 			// Load /dev_bdvd/ from game list if available
 			if (std::string game_path = m_games_config.get_path(m_title_id); !game_path.empty())
 			{
-				if (is_iso_file(game_path))
+				if (is_iso_file(game_path, nullptr, &launching_from_optical_drive))
 				{
 					sys_log.notice("Loading iso archive for patch ('%s')", game_path);
 
@@ -2367,9 +2376,9 @@ game_boot_result Emulator::Load(const std::string& title_id, bool is_disc_patch,
 			if (!pkgs.empty())
 			{
 				bool install_success = true;
-				BlockingCallFromMainThread([this, &pkgs, &install_success]()
+				BlockingCallFromMainThread([this, &pkgs, &install_success, launching_from_optical_drive]()
 				{
-					if (!GetCallbacks().on_install_pkgs(pkgs))
+					if (!GetCallbacks().on_install_pkgs(pkgs, launching_from_optical_drive))
 					{
 						install_success = false;
 					}
