@@ -191,7 +191,7 @@ namespace rpcs3::utils
 
 	std::string get_hdd0_locks_dir()
 	{
-		return get_hdd0_game_dir() + "＄locks/";
+		return get_hdd0_game_dir() + "$locks/";
 	}
 
 	std::string get_hdd1_cache_dir()

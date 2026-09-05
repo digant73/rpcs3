@@ -6,6 +6,7 @@
 #include "Emu/System.h"
 #include "Crypto/utils.h"
 
+#include <chrono>
 #include <codecvt>
 #include <algorithm>
 #include <cmath>
@@ -59,14 +60,15 @@ static void* get_aligned_buf()
 
 static bool is_iso_file(iso_file& file, u64* size = nullptr)
 {
-	if (!file || file.size() < 32768ULL + 6)
+	// The standard identifier ("CD001") follows the type of the first volume descriptor
+	if (!file || file.size() < ISO_DESCRIPTORS_OFFSET + 6)
 	{
 		return false;
 	}
 
 	char magic[5];
 
-	if (file.read_at(32768ULL + 1, magic, 5) != 5)
+	if (file.read_at(ISO_DESCRIPTORS_OFFSET + 1, magic, 5) != 5)
 	{
 		return false;
 	}
@@ -844,19 +846,21 @@ static std::optional<iso_fs_metadata> iso_read_directory_entry(fs::file& entry, 
 	const u32 start_sector = retrieve_endian_int<u32>(header.start_sector);
 	const u32 file_size = retrieve_endian_int<u32>(header.file_size);
 
-	std::tm file_date = {};
+	// The recorded ECMA-119 date holds the local time of the recorder, paired with its offset from GMT.
+	// std::chrono::sys_days is anchored to the UNIX epoch, so the host time zone never enters the result.
+	const std::chrono::year_month_day file_date
+	{
+		std::chrono::year{1900 + header.year},
+		std::chrono::month{header.month},
+		std::chrono::day{header.day}
+	};
 
-	file_date.tm_year = header.year;
-	file_date.tm_mon = header.month - 1;
-	file_date.tm_mday = header.day;
-	file_date.tm_hour = header.hour;
-	file_date.tm_min = header.minute;
-	file_date.tm_sec = header.second;
+	// The offset from GMT is stored as a signed number of 15 minute intervals (ECMA-119 9.1.5),
+	// so it has to be subtracted from the recorded local time in order to obtain UTC
+	const auto file_time = std::chrono::sys_days{file_date} + std::chrono::hours{header.hour} + std::chrono::minutes{header.minute}
+		+ std::chrono::seconds{header.second} - std::chrono::minutes{static_cast<s8>(header.timezone_value) * 15};
 
-	const s16 timezone_value = header.timezone_value;
-	const s16 timezone_offset = (timezone_value - 50) * 15 * 60;
-
-	const std::time_t date_time = std::mktime(&file_date) + timezone_offset;
+	const std::time_t date_time = static_cast<std::time_t>(file_time.time_since_epoch().count());
 
 	// 2nd flag bit indicates whether a given fs node is a directory
 	const bool is_directory = header.flags & 0b00000010;
@@ -1025,17 +1029,29 @@ iso_archive::iso_archive(const std::string& path)
 	// "m_path" is updated with the raw device path in case "path" points to a BD drive
 	fs::get_optical_raw_device(path, &m_path);
 
-	if (!is_iso_file(m_path))
+	// NOTE: the file is opened once here and then handed over to the parsing below. Recognizing the ISO through its
+	//       path (i.e. "is_iso_file(m_path)") would open it and read its volume descriptor a second time, which is a
+	//       physical read when the path points to an optical drive
+	auto file = std::make_unique<iso_file>(m_path);
+
+	if (!is_iso_file(*file))
 	{
 		iso_log.error("iso_archive: Failed to recognize ISO file: '%s'", path);
 		invalidate();
 		return;
 	}
 
-	fs::file iso_file(std::make_unique<iso_file>(m_path));
+	// NOTE: "is_iso_file()" reads through "read_at()", which does not move the position, so the file is still at its
+	//       beginning here
+	fs::file iso_file(std::move(file));
 
 	u8 descriptor_type = -2;
 	bool use_ucs2_decoding = false;
+
+	// Skip the system area: scanning it sector by sector would read 16 sectors (a physical read each, on an optical
+	// drive) only to find boot data, which could even be mistaken for a volume descriptor.
+	// NOTE: "is_iso_file()" above already verified the standard identifier is right here
+	iso_file.seek(ISO_DESCRIPTORS_OFFSET);
 
 	do
 	{

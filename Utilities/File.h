@@ -198,17 +198,16 @@ namespace fs
 	// Return "path" plus an ending delimiter (if missing) if "path" is an existing directory. Otherwise, an empty string
 	std::string get_path_if_dir(const std::string& path);
 
-	// Restore the trailing delimiter of a root path if it was trimmed (e.g. turn "E:" back into "E:/"). On Windows a
-	// drive name alone does not point to the root of the drive but to the current directory of that drive, so the
-	// delimiter is part of the path itself and it must not be dropped.
-	// NOTE: nothing is done on the other platforms, where a name ending with ':' is a regular path component
-	inline void restore_root_delim([[maybe_unused]] std::string& path)
+	// Check whether the path is the bare name of a drive (e.g. "E:"), that is a root path whose trailing delimiter was
+	// trimmed: such a path does not point to the root of the drive but to the current directory of that drive, so the
+	// delimiter must be restored before using or storing it.
+	// NOTE: always false on the other platforms, where a name ending with ':' is a regular path component
+	inline bool is_drive_name([[maybe_unused]] std::string_view path)
 	{
 #ifdef _WIN32
-		if (!path.empty() && path.back() == ':')
-		{
-			path += '/';
-		}
+		return !path.empty() && path.back() == ':';
+#else
+		return false;
 #endif
 	}
 
