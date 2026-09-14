@@ -20,6 +20,8 @@
 #include <string>
 #include <map>
 
+class QTabWidget;
+
 namespace gui
 {
 	namespace utils
@@ -146,6 +148,12 @@ namespace gui
 		// Workaround: resize the dropdown combobox items
 		void resize_combo_box_view(QComboBox* combo);
 
+		// Moves the keyboard focus to the tab bar and keeps it there whenever the current tab changes, so the
+		// tabs can always be navigated with the keyboard (Ctrl+Tab, arrow keys, ...). Without this the focus is
+		// left behind on a button or on the old tab's page, and the tabs stop answering the keyboard.
+		// The initial focus is only taken if no other widget of the window has claimed it.
+		void keep_tab_bar_focused(QTabWidget* tab_widget);
+
 		// Recalculates a table's item count based on the available visible space and fills it with empty items
 		void update_table_item_count(QTableWidget* table);
 
@@ -160,6 +168,13 @@ namespace gui
 
 		// Open a path in the explorer and mark the file
 		void open_dir(const QString& path);
+
+		// Shows the error dialog of a disc image that cannot be read back, the one an encrypted image whose key
+		// is missing or does not match ends up in: it spells out the key file that is being looked for and the
+		// folder it goes in, and offers to open that folder.
+		// "key_invalid" tells a key file belonging to another disc from no key file at all, and "prefix" is put
+		// before the text (rich text, as the whole dialog is) for a caller that needs a heading of its own
+		void show_disc_key_error(QWidget* parent, const QString& title, const std::string& path, bool key_invalid, const QString& prefix = {});
 
 		// Finds a child of a QTreeWidgetItem with given text
 		QTreeWidgetItem* find_child(QTreeWidgetItem* parent, const QString& text);
