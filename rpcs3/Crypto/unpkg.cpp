@@ -1014,7 +1014,7 @@ bool package_reader::fill_data(std::map<std::string, install_entry*>& all_instal
 		}
 		default:
 		{
-			// TODO: check for valid utf8 characters
+			// "path" went through "vfs::escape", which also takes care of the bytes that are not valid UTF-8
 			auto map_ptr = &*all_install_entries.try_emplace(path).first;
 
 			m_install_entries.push_back({
