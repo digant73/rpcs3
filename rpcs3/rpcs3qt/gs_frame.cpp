@@ -254,8 +254,12 @@ void gs_frame::showEvent(QShowEvent* event)
 	pos.setX(std::min(pos.x(), max_pos.x()));
 	pos.setY(std::min(pos.y(), max_pos.y()));
 
-	// Set the new position
-	setFramePosition(pos);
+	// Set the new position. Only a windowed frame has one of its own: any other state spans the whole screen
+	// or is iconified, and the clamping above would push the frame into the top left corner and drop that state.
+	if (visibility() == Visibility::Windowed)
+	{
+		setFramePosition(pos);
+	}
 
 	QWindow::showEvent(event);
 }
@@ -718,7 +722,14 @@ void gs_frame::show()
 {
 	Emu.CallFromMainThread([this]()
 	{
-		QWindow::show();
+		// Make the frame visible, restoring it if it was minimized. A fullscreen or maximized state is kept:
+		// clearing it reads as a request to leave fullscreen and races with the startup visibility below.
+		if (const Qt::WindowStates states = windowStates(); states & Qt::WindowMinimized)
+		{
+			setWindowStates(states & ~Qt::WindowMinimized);
+		}
+
+		setVisible(true);
 
 		if (g_cfg.misc.start_fullscreen || m_start_games_fullscreen)
 		{
