@@ -8,6 +8,7 @@
 #include "Emu/Cell/PPUThread.h"
 #include "Emu/Cell/PPUCallback.h"
 #include "Emu/Cell/PPUOpcodes.h"
+#include "Emu/Cell/timers.hpp"
 #include "Emu/Memory/vm_locking.h"
 #include "sys_event.h"
 #include "sys_process.h"
@@ -563,6 +564,8 @@ error_code sys_ppu_thread_start(ppu_thread& ppu, u32 thread_id)
 
 	sys_ppu_thread.trace("sys_ppu_thread_start(thread_id=0x%x)", thread_id);
 
+	const u32 old_hw_sleep_time = ppu.hw_sleep_time;
+
 	const auto thread = idm::get<named_thread<ppu_thread>>(thread_id, [&, notify = lv2_obj::notify_all_t()](ppu_thread& thread) -> CellError
 	{
 		if (!thread.state.test_and_reset(cpu_flag::stop))
@@ -594,6 +597,15 @@ error_code sys_ppu_thread_start(ppu_thread& ppu, u32 thread_id)
 	{
 		thread->cmd_notify.store(1);
 		thread->cmd_notify.notify_one();
+
+		// The new thread preempts the caller: wait until it has taken the entry command (bounded)
+		if (ppu.hw_sleep_time != old_hw_sleep_time)
+		{
+			for (const u64 start = get_system_time(); thread->cmd_queue.size() && !ppu.is_stopped() && get_system_time() - start < 5000;)
+			{
+				std::this_thread::yield();
+			}
+		}
 	}
 
 	return CELL_OK;
