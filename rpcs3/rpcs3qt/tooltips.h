@@ -26,6 +26,7 @@ public:
 		const QString lib_default_lle              = tr("Select to HLE. (LLE by default)");
 
 		const QString debug_console_mode           = tr("Increases the amount of usable system memory to match a DECR console and more.\nCauses some software to behave differently than on retail hardware.");
+		const QString accurate_ppuvest             = tr("Computes PPU vector reciprocal and reciprocal square root estimates exactly as the PS3 does.\nSome games compare these results with a real console, for example in online play. Comes at a performance cost.\nIf unsure, do not modify this setting.");
 		const QString accurate_rsx_access          = tr("Forces RSX pauses on SPU MFC_GETLLAR and SPU MFC_PUTLLUC operations.");
 		const QString accurate_spu_dma             = tr("Accurately processes SPU DMA operations.");
 		const QString silence_all_logs             = tr("Stop writing any logs after game startup. Don't use unless you believe it's necessary.");
@@ -49,7 +50,8 @@ public:
 		const QString rsx_fifo_accuracy            = tr("\"Fast\" is the least accurate setting, RSX does not emulate atomic FIFO buffer.\n\"Atomic\" benefits stability greatly in many games with little performance penalty.\n\"Atomic & Ordered\" is the most accurate but it is the slowest and without much stability benefit in games.");
 		const QString vblank_rate                  = tr("Adjusts the frequency of vertical blanking signals that the emulator sends.\nAffects timing of events which rely on these signals.");
 		const QString clocks_scale                 = tr("Changes the scale of emulated system time.\nAffects software which uses system time to calculate things such as dynamic timesteps.");
-		const QString wake_up_delay                = tr("Controls how much time it takes for RSX to start processing after waking up by the Cell processor.\nIncreasing wakeup delay improves stability, but very high values can lower RSX/GPU performance.\nIt is recommend to adjust this at 20µs to 40µs increments until the best value for optimal stability is reached.");
+		const QString wake_up_delay                = tr("Controls how much time it takes for RSX to start processing after waking up by the Cell processor.\nIncreasing wakeup delay improves stability, but very high values can lower RSX/GPU performance.\nIt is recommended to adjust this at 20µs to 40µs increments until the best value for optimal stability is reached.");
+		const QString ppu_event_wake_up_delay      = tr("Controls how much time it takes for a PPU thread to resume after an SPU sends it an event.\nIncreasing wakeup delay may improve stability, but very high values can lower performance. It is recommended to adjust this at 20µs to 40µs increments until the best value for optimal stability is reached.");
 		const QString disabled_from_global         = tr("Do not change this setting globally.\nRight-click a game in the game list and choose \"Configure\" instead.");
 		const QString vulkan_async_scheduler       = tr("Determines how to schedule GPU async compute jobs when using asynchronous streaming.\nUse 'Safe' mode for more spec compliant behavior at the cost of some CPU overhead. This setting works with all devices.\nUse 'Fast' to use a faster but hacky version. This option is internally disabled for NVIDIA GPUs due to causing GPU hangs.");
 		const QString disable_msl_fast_math        = tr("Disables Fast Math for MSL shaders, which may violate the IEEE 754 standard.\nDisabling it may fix some artifacts, especially on Apple GPUs, at the cost of performance.");
@@ -96,6 +98,7 @@ public:
 		const QString max_cpu_preempt           = tr("Reduces CPU usage and power consumption, improving battery life on mobile devices. (0 means disabled)\nHigher values cause a more pronounced effect, but may cause audio or performance issues. A value of 50 or less is recommended.\nThis option forces an FPS limit because it's active when framerate is stable.\nThe lighter the game is on the hardware, the more power is saved by it. (until the preemption count barrier is reached)");
 		const QString ppu_reservation_priority  = tr("Give PPUs an execution advantage when the SPUs are using reservations.\nThis setting is recommended only for a few game for improving performance.\nDO NOT use it without being advised to due to potential performance degradation.");
 		const QString accurate_spu_reservations = tr("Accurately emulates SPU reservations.\nDisabling it can greatly improve performance.\nStability may be compromised in some games but not in others, disable only if advised.");
+		const QString spu_mmio_delay            = tr("Compensate for hardware MMIO SPU performance not having thread delays by slowing down PPU instead.\nEnable only if advised.");
 
 		// debug
 
@@ -109,7 +112,7 @@ public:
 		const QString accurate_ppuvnan             = tr("Accurately set NaN results in vector instructions in PPU backends.\nIf unsure, do not modify this setting.");
 		const QString accurate_ppufpcc             = tr("Accurately set FPCC Bits in PPU backends.\nIf unsure, do not modify this setting.");
 		const QString accurate_cache_line_stores   = tr("Accurately processes PPU DCBZ instruction.\nIn addition, when combined with Accurate SPU DMA, SPU PUT cache line accesses will be processed atomically.");
-		const QString mfc_delay_command            = tr("Forces delaying any odd MFC command, waits for at least 2 pending commands to execute them in a random order.\nMust be used with either SPU interpreters currently.\nSeverely degrades performance! If unsure, don't use this option.");
+		const QString mfc_delay_command            = tr("Forces delaying any odd MFC command, waits for at least 2 pending commands to execute them in a random order.\nSeverely degrades performance! If unsure, don't use this option.");
 		const QString hook_static_functions        = tr("Allows to hook some functions like 'memcpy' replacing them with high-level implementations. May do nothing or break things. Experimental.");
 		const QString renderdoc_compatibility      = tr("Enables use of classic OpenGL buffers which allows capturing tools to work with RPCS3 e.g RenderDoc.\nAlso allows Vulkan to use debug markers for nicer Renderdoc captures.\nIf unsure, don't use this option.");
 		const QString force_high_pz                = tr("Only useful when debugging differences in GPU hardware.\nNot necessary for average users.\nIf unsure, don't use this option.");
@@ -204,8 +207,8 @@ public:
 		const QString multithreaded_rsx          = tr("Offloads some RSX operations to a secondary thread.\nImproves performance for high-core processors.\nMay cause slowdown in weaker CPUs due to the extra worker thread load.");
 
 		const QString legacy_shader_recompiler        = tr("Disables asynchronous shader compilation.\nFixes missing graphics while shaders are compiling but introduces severe stuttering or lag.\nUse this if you do not want to deal with graphics pop-in, or for testing before filing any bug reports.");
-		const QString async_shader_recompiler         = tr("This is the recommended option.\nIf a shader is not found in the cache, nothing will be rendered for this shader until it has compiled.\nYou may experience graphics pop-in.");
-		const QString async_with_shader_interpreter   = tr("Hybrid rendering mode.\nIf a shader is not found in the cache, the interpreter will be used to render approximated graphics for this shader until it has compiled.");
+		const QString async_shader_recompiler         = tr("If a shader is not found in the cache, nothing will be rendered for this shader until it has compiled.\nYou may experience graphics pop-in.");
+		const QString async_with_shader_interpreter   = tr("This is the recommended option.\nHybrid rendering mode.\nIf a shader is not found in the cache, the interpreter will be used to render approximated graphics for this shader until it has compiled.");
 		const QString shader_interpreter_only         = tr("All rendering is handled by the interpreter with no attempt to compile native shaders.\nThis mode is very slow and experimental.");
 		const QString shader_compiler_threads         = tr("Number of threads to use for the shader compiler backend.\nOnly has an impact when shader mode is set to one of the asynchronous modes.");
 		const QString shader_precision                = tr("Controls the precision level of generated shaders. Low precision generates much faster code depending on the hardware, but can sometimes generate minor visual glitches or flicker.");
