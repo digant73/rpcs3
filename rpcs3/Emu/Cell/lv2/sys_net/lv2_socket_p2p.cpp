@@ -279,10 +279,6 @@ s32 lv2_socket_p2p::setsockopt(s32 level, s32 optname, const std::vector<u8>& op
 		default: break;
 		}
 	}
-	else if (level == SYS_NET_SOL_SOCKET && optname == SYS_NET_SO_BROADCAST)
-	{
-		so_broadcast = native_int;
-	}
 
 	const u64 key = (static_cast<u64>(level) << 32) | static_cast<u64>(optname);
 	sockopt_cache cache{};
